@@ -235,5 +235,59 @@ unction convert_chars($content,$flag='obsolete attribute left there for backward
 
 }
 
+function convert_bbcode($content) {
+	global $wp_bbcode, $use_bbcode;
+	if ($use_bbcode) {
+		$content = preg_replace($wp_bbcode["in"], $wp_bbcode["out"], $content);
+	}
+	$content = convert_bbcode_email($content);
+	return $content;
+}
+
+function convert_bbcode_email($content) {
+	global $use_bbcode;
+	$bbcode_email["in"] = array(
+		'#\[email](.+?)\[/email]#eis',
+		'#\[email=(.+?)](.+?)\[/email]#eis'
+	);
+	$bbcode_email["out"] = array(
+		"'<a href=\"mailto:'.antispambot('\\1').'\">'.antispambot('\\1').'</a>'",		// E-mail
+		"'<a href=\"mailto:'.antispambot('\\1').'\">\\2</a>'"
+	);
+
+	$content = preg_replace($bbcode_email["in"], $bbcode_email["out"], $content);
+	return $content;
+}
+
+function convert_gmcode($content) {
+	global $wp_gmcode, $use_gmcode;
+	if ($use_gmcode) {
+		$content = preg_replace($wp_gmcode["in"], $wp_gmcode["out"], $content);
+	}
+	return $content;
+}
+
+function convert_smilies($text) {
+	global $smilies_directory, $use_smilies;
+	global $wp_smiliessearch, $wp_smiliesreplace;
+    $output = '';
+	if ($use_smilies) {
+		// HTML loop taken from texturize function, could possible be consolidated
+		$textarr = preg_split("/(<.*>)/U", $text, -1, PREG_SPLIT_DELIM_CAPTURE); // capture the tags as well as in between
+		$stop = count($textarr);// loop stuff
+		for ($i = 0; $i < $stop; $i++) {
+			$content = $textarr[$i];
+			if ((strlen($content) > 0) && ('<' != $content{0})) { // If it's not a tag
+				$content = str_replace($wp_smiliessearch, $wp_smiliesreplace, $content);
+			}
+			$output .= $content;
+		}
+	} else {
+		// return default text.
+		$output = $text;
+	}
+	return $output;
+}
+
 
 ?>
