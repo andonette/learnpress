@@ -1333,6 +1333,41 @@ function pingGeoURL($blog_ID) {
     getRemoteFile($host,$path); 
 }
 
+/* wp_set_comment_status:
+   part of otaku42's comment moderation hack
+   changes the status of a comment according to $comment_status.
+   allowed values:
+   hold   : set comment_approve field to 0
+   approve: set comment_approve field to 1
+   delete : remove comment out of database
+   
+   returns true if change could be applied
+   returns false on database error or invalid value for $comment_status
+ */
+function wp_set_comment_status($comment_id, $comment_status) {
+    global $wpdb, $tablecomments;
+
+    switch($comment_status) {
+		case 'hold':
+			$query = "UPDATE $tablecomments SET comment_approved='0' WHERE comment_ID='$comment_id' LIMIT 1";
+		break;
+		case 'approve':
+			$query = "UPDATE $tablecomments SET comment_approved='1' WHERE comment_ID='$comment_id' LIMIT 1";
+		break;
+		case 'delete':
+			$query = "DELETE FROM $tablecomments WHERE comment_ID='$comment_id' LIMIT 1";
+		break;
+		default:
+			return false;
+    }
+    
+    if ($wpdb->query($query)) {
+		return true;
+    } else {
+		return false;
+    }
+}
+
 
 
 ?>
