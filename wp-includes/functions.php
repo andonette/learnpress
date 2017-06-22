@@ -1394,6 +1394,56 @@ function wp_get_comment_status($comment_id) {
     }
 }
 
+function wp_notify_postauthor($comment_id, $comment_type='comment') {
+    global $wpdb, $tablecomments, $tableposts, $tableusers;
+    global $querystring_start, $querystring_equal, $querystring_separator;
+    global $blogfilename, $blogname, $siteurl;
+    
+    $comment = $wpdb->get_row("SELECT * FROM $tablecomments WHERE comment_ID='$comment_id' LIMIT 1");
+    $post = $wpdb->get_row("SELECT * FROM $tableposts WHERE ID='$comment->comment_post_ID' LIMIT 1");
+    $user = $wpdb->get_row("SELECT * FROM $tableusers WHERE ID='$post->post_author' LIMIT 1");
 
+    if ('' == $user->user_email) return false; // If there's no email to send the comment to
+
+	$comment_author_domain = gethostbyaddr($comment->comment_author_IP);
+
+	$blogname = stripslashes($blogname);
+	
+	if ('comment' == $comment_type) {
+		$notify_message  = "New comment on your post #$comment->comment_post_ID \"".stripslashes($post->post_title)."\"\r\n\r\n";
+		$notify_message .= "Author : $comment->comment_author (IP: $comment->comment_author_IP , $comment_author_domain)\r\n";
+		$notify_message .= "E-mail : $comment->comment_author_email\r\n";
+		$notify_message .= "URI    : $comment->comment_author_url\r\n";
+		$notify_message .= "Whois  : http://ws.arin.net/cgi-bin/whois.pl?queryinput=$comment->comment_author_IP\r\n";
+		$notify_message .= "Comment:\r\n".stripslashes($comment->comment_content)."\r\n\r\n";
+		$notify_message .= "You can see all comments on this post here: \r\n";
+		$subject = '[' . $blogname . '] Comment: "' .stripslashes($post->post_title).'"';
+	} elseif ('trackback' == $comment_type) {
+		$notify_message  = "New trackback on your post #$comment_post_ID \"".stripslashes($post->post_title)."\"\r\n\r\n";
+		$notify_message .= "Website: $comment->comment_author (IP: $comment->comment_author_IP , $comment_author_domain)\r\n";
+		$notify_message .= "URI    : $comment->comment_author_url\r\n";
+		$notify_message .= "Excerpt: \n".stripslashes($comment->comment_content)."\r\n\r\n";
+		$notify_message .= "You can see all trackbacks on this post here: \r\n";
+		$subject = '[' . $blogname . '] Trackback: "' .stripslashes($post->post_title).'"';
+	} elseif ('pingback' == $comment_type) {
+		$notify_message  = "New pingback on your post #$comment_post_ID \"".stripslashes($post->post_title)."\"\r\n\r\n";
+		$notify_message .= "Website: $comment->comment_author\r\n";
+		$notify_message .= "URI    : $comment->comment_author_url\r\n";
+		$notify_message .= "Excerpt: \n[...] $original_context [...]\r\n\r\n";
+		$notify_message .= "You can see all pingbacks on this post here: \r\n";
+		$subject = '[' . $blogname . '] Pingback: "' .stripslashes($post->post_title).'"';
+	}
+	$notify_message .= get_permalink($comment->comment_post_ID) . '#comments';
+
+	if ('' == $comment->comment_author_email || '' == $comment->comment_author) {
+		$from = "From: \"$blogname\" <wordpress@" . $HTTP_SERVER_VARS['SERVER_NAME'] . '>';
+	} else {
+		$from = 'From: "' . stripslashes($comment->comment_author) . "\" <$comment->comment_author_email>";
+	}
+
+	@mail($user->user_email, $subject, $notify_message, $from);
+   
+    return true;
+}
 
 ?>
