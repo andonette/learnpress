@@ -18,4 +18,23 @@ if (!isset($querystring_start)) {
 /***** About-the-blog tags *****/
 /* Note: these tags go anywhere in the template */
 
+function bloginfo($show='') {
+	$info = get_bloginfo($show);
+	$info = convert_bbcode($info);
+	$info = convert_gmcode($info);
+	$info = convert_smilies($info);
+	$info = apply_filters('bloginfo', $info);
+	echo convert_chars($info, 'html');
+}
+
+function bloginfo_rss($show='') {
+	$info = strip_tags(get_bloginfo($show));
+	echo convert_chars($info, 'unicode');
+}
+
+function bloginfo_unicode($show='') {
+	$info = get_bloginfo($show);
+	echo convert_chars($info, 'unicode');
+}
+
 ?>
