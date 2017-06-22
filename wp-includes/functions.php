@@ -1483,6 +1483,20 @@ function wp_notify_moderator($comment_id) {
     return true;
 }
 
+// implementation of in_array that also should work on PHP3
+if (!function_exists('in_array')) {
 
+	function in_array($needle, $haystack) {
+	    $needle = strtolower($needle);
+	    
+	    for ($i = 0; $i < count($haystack); $i++) {
+		if (strtolower($haystack[$i]) == $needle) {
+		    return true;
+		}
+	    }
+	
+	    return false;
+	}
+}
 
 ?>
