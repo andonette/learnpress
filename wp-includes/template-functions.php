@@ -37,4 +37,42 @@ function bloginfo_unicode($show='') {
 	echo convert_chars($info, 'unicode');
 }
 
+function get_bloginfo($show='') {
+	global $siteurl, $blogfilename, $blogname, $blogdescription, $siteurl, $admin_email;
+	switch($show) {
+		case "url":
+			$output = $siteurl."/".$blogfilename;
+			break;
+		case "description":
+			$output = $blogdescription;
+			break;
+		case "rdf_url":
+			$output = $siteurl.'/wp-rdf.php';
+			break;
+		case "rss_url":
+			$output = $siteurl.'/wp-rss.php';
+			break;
+		case "rss2_url":
+			$output = $siteurl.'/wp-rss2.php';
+			break;
+		case "atom_url":
+			$output = $siteurl.'/wp-atom.php';
+			break;		
+		case "comments_rss2_url":
+			$output = $siteurl.'/wp-commentsrss2.php';
+			break;
+		case "pingback_url":
+			$output = $siteurl.'/xmlrpc.php';
+			break;
+		case "admin_email":
+			$output = $admin_email;
+			break;
+		case "name":
+		default:
+			$output = $blogname;
+			break;
+	}
+	return $output;
+}
+
 ?>
