@@ -1446,4 +1446,43 @@ function wp_notify_postauthor($comment_id, $comment_type='comment') {
     return true;
 }
 
+/* wp_notify_moderator
+   notifies the moderator of the blog (usually the admin)
+   about a new comment that waits for approval
+   always returns true
+ */
+function wp_notify_moderator($comment_id) {
+    global $wpdb, $tablecomments, $tableposts, $tableusers;
+    global $querystring_start, $querystring_equal, $querystring_separator;
+    global $blogfilename, $blogname, $siteurl;
+    
+    $comment = $wpdb->get_row("SELECT * FROM $tablecomments WHERE comment_ID='$comment_id' LIMIT 1");
+    $post = $wpdb->get_row("SELECT * FROM $tableposts WHERE ID='$comment->comment_post_ID' LIMIT 1");
+    $user = $wpdb->get_row("SELECT * FROM $tableusers WHERE ID='$post->post_author' LIMIT 1");
+
+    $comment_author_domain = gethostbyaddr($comment->comment_author_IP);
+    $comments_waiting = $wpdb->get_var("SELECT count(comment_ID) FROM $tablecomments WHERE comment_approved = '0'");
+
+    $notify_message  = "A new comment on the post #$comment->comment_post_ID \"".stripslashes($post->post_title)."\" is waiting for your approval\r\n\r\n";
+    $notify_message .= "Author : $comment->comment_author (IP: $comment->comment_author_IP , $comment_author_domain)\r\n";
+    $notify_message .= "E-mail : $comment->comment_author_email\r\n";
+    $notify_message .= "URL    : $comment->comment_author_url\r\n";
+    $notify_message .= "Whois  : http://ws.arin.net/cgi-bin/whois.pl?queryinput=$comment->comment_author_IP\r\n";
+    $notify_message .= "Comment:\r\n".stripslashes($comment->comment_content)."\r\n\r\n";
+    $notify_message .= "To approve this comment, visit: $siteurl/wp-admin/post.php?action=mailapprovecomment&p=".$comment->comment_post_ID."&comment=$comment_id\r\n";
+    $notify_message .= "To delete this comment, visit: $siteurl/wp-admin/post.php?action=confirmdeletecomment&p=".$comment->comment_post_ID."&comment=$comment_id\r\n";
+    $notify_message .= "Currently $comments_waiting comments are waiting for approval. Please visit the moderation panel:\r\n";
+    $notify_message .= "$siteurl/wp-admin/moderation.php\r\n";
+
+    $subject = '[' . stripslashes($blogname) . '] Please approve: "' .stripslashes($post->post_title).'"';
+    $admin_email = get_settings("admin_email");
+    $from  = "From: $admin_email";
+
+    @mail($admin_email, $subject, $notify_message, $from);
+    
+    return true;
+}
+
+
+
 ?>
