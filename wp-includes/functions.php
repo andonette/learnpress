@@ -343,5 +343,103 @@ function strip_all_but_one_link($text, $mylink) {
 	return $text;
 }
 
+/***** // Formatting functions *****/
+
+
+
+function get_lastpostdate() {
+	global $tableposts, $cache_lastpostdate, $use_cache, $time_difference, $pagenow, $wpdb;
+	if ((!isset($cache_lastpostdate)) OR (!$use_cache)) {
+		$now = date("Y-m-d H:i:s",(time() + ($time_difference * 3600)));
+
+		$lastpostdate = $wpdb->get_var("SELECT post_date FROM $tableposts WHERE post_date <= '$now' AND post_status = 'publish' ORDER BY post_date DESC LIMIT 1");
+		$cache_lastpostdate = $lastpostdate;
+	} else {
+		$lastpostdate = $cache_lastpostdate;
+	}
+	return $lastpostdate;
+}
+
+function user_pass_ok($user_login,$user_pass) {
+	global $cache_userdata,$use_cache;
+	if ((empty($cache_userdata[$user_login])) OR (!$use_cache)) {
+		$userdata = get_userdatabylogin($user_login);
+	} else {
+		$userdata = $cache_userdata[$user_login];
+	}
+	return ($user_pass == $userdata->user_pass);
+}
+
+function get_currentuserinfo() { // a bit like get_userdata(), on steroids
+	global $HTTP_COOKIE_VARS, $user_login, $userdata, $user_level, $user_ID, $user_nickname, $user_email, $user_url, $user_pass_md5, $cookiehash;
+	// *** retrieving user's data from cookies and db - no spoofing
+	$user_login = $HTTP_COOKIE_VARS['wordpressuser_'.$cookiehash];
+	$userdata = get_userdatabylogin($user_login);
+	$user_level = $userdata->user_level;
+	$user_ID = $userdata->ID;
+	$user_nickname = $userdata->user_nickname;
+	$user_email = $userdata->user_email;
+	$user_url = $userdata->user_url;
+	$user_pass_md5 = md5($userdata->user_pass);
+}
+
+function get_userdata($userid) {
+	global $wpdb, $cache_userdata, $use_cache, $tableusers;
+	if ((empty($cache_userdata[$userid])) || (!$use_cache)) {
+		$user = $wpdb->get_row("SELECT * FROM $tableusers WHERE ID = $userid");
+        $user->user_nickname = stripslashes($user->user_nickname);
+        $user->user_firstname = stripslashes($user->user_firstname);
+        $user->user_lastname = stripslashes($user->user_lastname);
+        $user->user_firstname =  stripslashes($user->user_firstname);
+        $user->user_lastname = stripslashes($user->user_lastname);
+		$user->user_description = stripslashes($user->user_description);
+		$cache_userdata[$userid] = $user;
+	} else {
+		$user = $cache_userdata[$userid];
+	}
+	return $user;
+}
+
+function get_userdata2($userid) { // for team-listing
+	global $tableusers, $post;
+	$user_data['ID'] = $userid;
+	$user_data['user_login'] = $post->user_login;
+	$user_data['user_firstname'] = $post->user_firstname;
+	$user_data['user_lastname'] = $post->user_lastname;
+	$user_data['user_nickname'] = $post->user_nickname;
+	$user_data['user_level'] = $post->user_level;
+	$user_data['user_email'] = $post->user_email;
+	$user_data['user_url'] = $post->user_url;
+	return $user_data;
+}
+
+function get_userdatabylogin($user_login) {
+	global $tableusers, $cache_userdata, $use_cache, $wpdb;
+	if ((empty($cache_userdata["$user_login"])) OR (!$use_cache)) {
+		$user = $wpdb->get_row("SELECT * FROM $tableusers WHERE user_login = '$user_login'");
+		$cache_userdata["$user_login"] = $user;
+	} else {
+		$user = $cache_userdata["$user_login"];
+	}
+	return $user;
+}
+
+function get_userid($user_login) {
+	global $tableusers, $cache_userdata, $use_cache, $wpdb;
+	if ((empty($cache_userdata["$user_login"])) OR (!$use_cache)) {
+		$user_id = $wpdb->get_var("SELECT ID FROM $tableusers WHERE user_login = '$user_login'");
+
+		$cache_userdata["$user_login"] = $user_id;
+	} else {
+		$user_id = $cache_userdata["$user_login"];
+	}
+	return $user_id;
+}
+
+function get_usernumposts($userid) {
+	global $tableposts, $tablecomments, $wpdb;
+	return $wpdb->get_var("SELECT COUNT(*) FROM $tableposts WHERE post_author = $userid");
+}
+
 
 ?>
