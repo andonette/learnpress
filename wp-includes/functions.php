@@ -646,6 +646,143 @@ function dropdown_categories($default = 0) {
 
 }
 
+function touch_time($edit = 1) {
+	global $month, $postdata, $time_difference;
+	// echo $postdata['Date'];
+	if ('draft' == $postdata['post_status']) {
+		$checked = 'checked="checked" ';
+		$edit = false;
+	} else {
+		$checked = ' ';
+	}
+
+	echo '<p><input type="checkbox" class="checkbox" name="edit_date" value="1" id="timestamp" '.$checked.'/> <label for="timestamp">Edit timestamp</label> <a href="http://wordpress.org/docs/reference/post/#edit_timestamp" title="Help on changing the timestamp">?</a><br />';
+	
+	$time_adj = time() + ($time_difference * 3600);
+	$jj = ($edit) ? mysql2date('d', $postdata['Date']) : date('d', $time_adj);
+	$mm = ($edit) ? mysql2date('m', $postdata['Date']) : date('m', $time_adj);
+	$aa = ($edit) ? mysql2date('Y', $postdata['Date']) : date('Y', $time_adj);
+	$hh = ($edit) ? mysql2date('H', $postdata['Date']) : date('H', $time_adj);
+	$mn = ($edit) ? mysql2date('i', $postdata['Date']) : date('i', $time_adj);
+	$ss = ($edit) ? mysql2date('s', $postdata['Date']) : date('s', $time_adj);
+
+	echo '<input type="text" name="jj" value="'.$jj.'" size="2" maxlength="2" />'."\n";
+	echo "<select name=\"mm\">\n";
+	for ($i=1; $i < 13; $i=$i+1) {
+		echo "\t\t\t<option value=\"$i\"";
+		if ($i == $mm)
+		echo " selected='selected'";
+		if ($i < 10) {
+			$ii = "0".$i;
+		} else {
+			$ii = "$i";
+		}
+		echo ">".$month["$ii"]."</option>\n";
+	} ?>
+</select>
+<input type="text" name="aa" value="<?php echo $aa ?>" size="4" maxlength="5" /> @ 
+<input type="text" name="hh" value="<?php echo $hh ?>" size="2" maxlength="2" /> : 
+<input type="text" name="mn" value="<?php echo $mn ?>" size="2" maxlength="2" /> : 
+<input type="text" name="ss" value="<?php echo $ss ?>" size="2" maxlength="2" /> </p>
+	<?php
+}
+
+unction gzip_compression() {
+	global $gzip_compressed;
+		if (!$gzip_compressed) {
+		$phpver = phpversion(); //start gzip compression
+		if($phpver >= "4.0.4pl1") {
+			if(extension_loaded("zlib")) { 
+				ob_start("ob_gzhandler"); 
+			}
+		} else if($phpver > "4.0") {
+			if(strstr($HTTP_SERVER_VARS['HTTP_ACCEPT_ENCODING'], 'gzip')) {
+				if(extension_loaded("zlib")) { 
+					$do_gzip_compress = TRUE; 
+					ob_start(); 
+					ob_implicit_flush(0); 
+					header("Content-Encoding: gzip");
+				}
+			}
+		} //end gzip compression - that piece of script courtesy of the phpBB dev team
+		$gzip_compressed=1;
+	}
+}
+
+unction alert_error($msg) { // displays a warning box with an error message (original by KYank)
+	global $$HTTP_SERVER_VARS;
+	?>
+	<html>
+	<head>
+	<script language="JavaScript">
+	<!--
+	alert("<?php echo $msg ?>");
+	history.back();
+	//-->
+	</script>
+	</head>
+	<body>
+	<!-- this is for non-JS browsers (actually we should never reach that code, but hey, just in case...) -->
+	<?php echo $msg; ?><br />
+	<a href="<?php echo $HTTP_SERVER_VARS["HTTP_REFERER"]; ?>">go back</a>
+	</body>
+	</html>
+	<?php
+	exit;
+}
+
+function alert_confirm($msg) { // asks a question - if the user clicks Cancel then it brings them back one page
+	?>
+	<script language="JavaScript">
+	<!--
+	if (!confirm("<?php echo $msg ?>")) {
+	history.back();
+	}
+	//-->
+	</script>
+	<?php
+}
+
+function redirect_js($url,$title="...") {
+	?>
+	<script language="JavaScript">
+	<!--
+	function redirect() {
+	window.location = "<?php echo $url; ?>";
+	}
+	setTimeout("redirect();", 100);
+	//-->
+	</script>
+	<p>Redirecting you : <b><?php echo $title; ?></b><br />
+	<br />
+	If nothing happens, click <a href="<?php echo $url; ?>">here</a>.</p>
+	<?php
+	exit();
+}
+
+// functions to count the page generation time (from phpBB2)
+// ( or just any time between timer_start() and timer_stop() )
+
+function timer_start() {
+    global $timestart;
+    $mtime = microtime();
+    $mtime = explode(" ",$mtime);
+    $mtime = $mtime[1] + $mtime[0];
+    $timestart = $mtime;
+    return true;
+}
+
+function timer_stop($display=0,$precision=3) { //if called like timer_stop(1), will echo $timetotal
+    global $timestart,$timeend;
+    $mtime = microtime();
+    $mtime = explode(" ",$mtime);
+    $mtime = $mtime[1] + $mtime[0];
+    $timeend = $mtime;
+    $timetotal = $timeend-$timestart;
+    if ($display)
+        echo number_format($timetotal,$precision);
+    return $timetotal;
+}
 
 
 
