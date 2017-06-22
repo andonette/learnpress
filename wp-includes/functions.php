@@ -317,5 +317,31 @@ function make_clickable($text) { // original function: phpBB, extended here for 
     return $ret;
 }
 
+function is_email($user_email) {
+	$chars = "/^([a-z0-9_]|\\-|\\.)+@(([a-z0-9_]|\\-)+\\.)+[a-z]{2,4}\$/i";
+	if(strstr($user_email, '@') && strstr($user_email, '.')) {
+		if (preg_match($chars, $user_email)) {
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		return false;
+	}
+}
+
+
+function strip_all_but_one_link($text, $mylink) {
+	$match_link = '#(<a.+?href.+?'.'>)(.+?)(</a>)#';
+	preg_match_all($match_link, $text, $matches);
+	$count = count($matches[0]);
+	for ($i=0; $i<$count; $i++) {
+		if (!strstr($matches[0][$i], $mylink)) {
+			$text = str_replace($matches[0][$i], $matches[2][$i], $text);
+		}
+	}
+	return $text;
+}
+
 
 ?>
