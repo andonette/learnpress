@@ -926,4 +926,60 @@ function make_url_footnote($content) {
 	return $content;
 }
 
+function xmlrpc_getposttitle($content) {
+	global $post_default_title;
+	if (preg_match('/<title>(.+?)<\/title>/is', $content, $matchtitle)) {
+		$post_title = $matchtitle[0];
+		$post_title = preg_replace('/<title>/si', '', $post_title);
+		$post_title = preg_replace('/<\/title>/si', '', $post_title);
+	} else {
+		$post_title = $post_default_title;
+	}
+	return $post_title;
+}
+	
+function xmlrpc_getpostcategory($content) {
+	global $post_default_category;
+	if (preg_match('/<category>(.+?)<\/category>/is', $content, $matchcat)) {
+		$post_category = $matchcat[0];
+		$post_category = preg_replace('/<category>/si', '', $post_category);
+		$post_category = preg_replace('/<\/category>/si', '', $post_category);
+
+	} else {
+		$post_category = $post_default_category;
+	}
+	return $post_category;
+}
+
+function xmlrpc_removepostdata($content) {
+	$content = preg_replace('/<title>(.+?)<\/title>/si', '', $content);
+	$content = preg_replace('/<category>(.+?)<\/category>/si', '', $content);
+	$content = trim($content);
+	return $content;
+}
+
+function debug_fopen($filename, $mode) {
+	global $debug;
+	if ($debug == 1) {
+		$fp = fopen($filename, $mode);
+		return $fp;
+	} else {
+		return false;
+	}
+}
+
+function debug_fwrite($fp, $string) {
+	global $debug;
+	if ($debug == 1) {
+		fwrite($fp, $string);
+	}
+}
+
+function debug_fclose($fp) {
+	global $debug;
+	if ($debug == 1) {
+		fclose($fp);
+	}
+}
+
 ?>
