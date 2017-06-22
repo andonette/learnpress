@@ -854,6 +854,76 @@ function pingBlogs($blog_ID="1") {
 	}
 }
 
+// Send a Trackback
+function trackback($trackback_url, $title, $excerpt, $ID) {
+	global $blogname, $wpdb, $tableposts;
+	$title = urlencode(stripslashes($title));
+	$excerpt = urlencode(stripslashes($excerpt));
+	$blog_name = urlencode(stripslashes($blogname));
+	$tb_url = $trackback_url;
+	$url = urlencode(get_permalink($ID));
+	$query_string = "title=$title&url=$url&blog_name=$blog_name&excerpt=$excerpt";
+	$trackback_url = parse_url($trackback_url);
+	$http_request  = 'POST '.$trackback_url['path']." HTTP/1.0\r\n";
+	$http_request .= 'Host: '.$trackback_url['host']."\r\n";
+	$http_request .= 'Content-Type: application/x-www-form-urlencoded'."\r\n";
+	$http_request .= 'Content-Length: '.strlen($query_string)."\r\n";
+	$http_request .= "\r\n";
+	$http_request .= $query_string;
+	$fs = @fsockopen($trackback_url['host'], 80);
+	@fputs($fs, $http_request);
+/*
+	$debug_file = 'trackback.log';
+	$fp = fopen($debug_file, 'a');
+	fwrite($fp, "\n*****\nRequest:\n\n$http_request\n\nResponse:\n\n");
+	while(!@feof($fs)) {
+		fwrite($fp, @fgets($fs, 4096));
+	}
+	fwrite($fp, "\n\n");
+	fclose($fp);
+*/
+	@fclose($fs);
 
+	$wpdb->query("UPDATE $tableposts SET pinged = CONCAT(pinged, '\n', '$tb_url') WHERE ID = $ID");
+	$wpdb->query("UPDATE $tableposts SET to_ping = REPLACE(to_ping, '$tb_url', '') WHERE ID = $ID");
+	return $result;
+}
+
+// trackback - reply
+function trackback_response($error = 0, $error_message = '') {
+	if ($error) {
+		echo '<?xml version="1.0" encoding="iso-8859-1"?'.">\n";
+		echo "<response>\n";
+		echo "<error>1</error>\n";
+		echo "<message>$error_message</message>\n";
+		echo "</response>";
+	} else {
+		echo '<?xml version="1.0" encoding="iso-8859-1"?'.">\n";
+		echo "<response>\n";
+		echo "<error>0</error>\n";
+		echo "</response>";
+	}
+	die();
+}
+
+function make_url_footnote($content) {
+	global $siteurl;
+	preg_match_all('/<a(.+?)href=\"(.+?)\"(.*?)>(.+?)<\/a>/', $content, $matches);
+	$j = 0;
+	for ($i=0; $i<count($matches[0]); $i++) {
+		$links_summary = (!$j) ? "\n" : $links_summary;
+		$j++;
+		$link_match = $matches[0][$i];
+		$link_number = '['.($i+1).']';
+		$link_url = $matches[2][$i];
+		$link_text = $matches[4][$i];
+		$content = str_replace($link_match, $link_text.' '.$link_number, $content);
+		$link_url = (strtolower(substr($link_url,0,7)) != 'http://') ? $siteurl.$link_url : $link_url;
+		$links_summary .= "\n".$link_number.' '.$link_url;
+	}
+	$content = strip_tags($content);
+	$content .= $links_summary;
+	return $content;
+}
 
 ?>
