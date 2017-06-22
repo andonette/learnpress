@@ -1368,6 +1368,32 @@ function wp_set_comment_status($comment_id, $comment_status) {
     }
 }
 
+/* wp_get_comment_status
+   part of otaku42's comment moderation hack
+   gets the current status of a comment
+
+   returned values:
+   "approved"  : comment has been approved
+   "unapproved": comment has not been approved
+   "deleted   ": comment not found in database
+
+   a (boolean) false signals an error
+ */
+function wp_get_comment_status($comment_id) {
+    global $wpdb, $tablecomments;
+    
+    $result = $wpdb->get_var("SELECT comment_approved FROM $tablecomments WHERE comment_ID='$comment_id' LIMIT 1");
+    if ($result == NULL) {
+        return "deleted";
+    } else if ($result == "1") {
+        return "approved";
+    } else if ($result == "0") {
+        return "unapproved";
+    } else {
+        return false;
+    }
+}
+
 
 
 ?>
