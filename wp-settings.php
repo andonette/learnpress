@@ -33,5 +33,6 @@ $wpdb->show_errors();
 // This is the name of the include directory. No "/" allowed.
 
 require (ABSPATH . WPINC . '/functions.php');
+require (ABSPATH . 'wp-config-extra.php');
 
 ?>
