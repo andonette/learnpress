@@ -982,4 +982,175 @@ function debug_fclose($fp) {
 	}
 }
 
+function pingback($content, $post_ID) {
+	// original code by Mort (http://mort.mine.nu:8080)
+	global $siteurl, $blogfilename, $wp_version;
+	$log = debug_fopen('./pingback.log', 'a');
+	$post_links = array();
+	debug_fwrite($log, 'BEGIN '.time()."\n");
+
+	// Variables
+	$ltrs = '\w';
+	$gunk = '/#~:.?+=&%@!\-';
+	$punc = '.:?\-';
+	$any = $ltrs.$gunk.$punc;
+	$pingback_str_dquote = 'rel="pingback"';
+	$pingback_str_squote = 'rel=\'pingback\'';
+	$x_pingback_str = 'x-pingback: ';
+	$pingback_href_original_pos = 27;
+
+	// Step 1
+	// Parsing the post, external links (if any) are stored in the $post_links array
+	// This regexp comes straight from phpfreaks.com
+	// http://www.phpfreaks.com/quickcode/Extract_All_URLs_on_a_Page/15.php
+	preg_match_all("{\b http : [$any] +? (?= [$punc] * [^$any] | $)}x", $content, $post_links_temp);
+
+	// Debug
+	debug_fwrite($log, 'Post contents:');
+	debug_fwrite($log, $content."\n");
+	
+	// Step 2.
+	// Walking thru the links array
+	// first we get rid of links pointing to sites, not to specific files
+	// Example:
+	// http://dummy-weblog.org
+	// http://dummy-weblog.org/
+	// http://dummy-weblog.org/post.php
+	// We don't wanna ping first and second types, even if they have a valid <link/>
+
+	foreach($post_links_temp[0] as $link_test){
+		$test = parse_url($link_test);
+		if (isset($test['query'])) {
+			$post_links[] = $link_test;
+		} elseif(($test['path'] != '/') && ($test['path'] != '')) {
+			$post_links[] = $link_test;
+		}
+	}
+
+	foreach ($post_links as $pagelinkedto){
+		debug_fwrite($log, 'Processing -- '.$pagelinkedto."\n\n");
+
+		$bits = parse_url($pagelinkedto);
+		if (!isset($bits['host'])) {
+			debug_fwrite($log, 'Couldn\'t find a hostname for '.$pagelinkedto."\n\n");
+			continue;
+		}
+		$host = $bits['host'];
+		$path = isset($bits['path']) ? $bits['path'] : '';
+		if (isset($bits['query'])) {
+			$path .= '?'.$bits['query'];
+		}
+		if (!$path) {
+			$path = '/';
+		}
+		$port = isset($bits['port']) ? $bits['port'] : 80;
+
+		// Try to connect to the server at $host
+		$fp = fsockopen($host, $port, $errno, $errstr, 30);
+		if (!$fp) {
+			debug_fwrite($log, 'Couldn\'t open a connection to '.$host."\n\n");
+			continue;
+		}
+
+		// Send the GET request
+		$request = "GET $path HTTP/1.1\r\nHost: $host\r\nUser-Agent: WordPress/$wp_version PHP/" . phpversion() . "\r\n\r\n";
+		ob_end_flush();
+		fputs($fp, $request);
+
+		// Start receiving headers and content
+		$contents = '';
+		$headers = '';
+		$gettingHeaders = true;
+		$found_pingback_server = 0;
+		while (!feof($fp)) {
+			$line = fgets($fp, 4096);
+			if (trim($line) == '') {
+				$gettingHeaders = false;
+			}
+			if (!$gettingHeaders) {
+				$contents .= trim($line)."\n";
+				$pingback_link_offset_dquote = strpos($contents, $pingback_str_dquote);
+				$pingback_link_offset_squote = strpos($contents, $pingback_str_squote);
+			} else {
+				$headers .= trim($line)."\n";
+				$x_pingback_header_offset = strpos(strtolower($headers), $x_pingback_str);
+			}
+			if ($x_pingback_header_offset) {
+				preg_match('#x-pingback: (.+)#is', $headers, $matches);
+				$pingback_server_url = trim($matches[1]);
+				debug_fwrite($log, "Pingback server found from X-Pingback header @ $pingback_server_url\n");
+				$found_pingback_server = 1;
+				break;
+			}
+			if ($pingback_link_offset_dquote || $pingback_link_offset_squote) {
+				$quote = ($pingback_link_offset_dquote) ? '"' : '\'';
+				$pingback_link_offset = ($quote=='"') ? $pingback_link_offset_dquote : $pingback_link_offset_squote;
+				$pingback_href_pos = @strpos($contents, 'href=', $pingback_link_offset);
+				$pingback_href_start = $pingback_href_pos+6;
+				$pingback_href_end = @strpos($contents, $quote, $pingback_href_start);
+				$pingback_server_url_len = $pingback_href_end-$pingback_href_start;
+				$pingback_server_url = substr($contents, $pingback_href_start, $pingback_server_url_len);
+				debug_fwrite($log, "Pingback server found from Pingback <link /> tag @ $pingback_server_url\n");
+				$found_pingback_server = 1;
+				break;
+			}
+		}
+
+		if (!$found_pingback_server) {
+			debug_fwrite($log, "Pingback server not found\n\n*************************\n\n");
+			@fclose($fp);
+		} else {
+			debug_fwrite($log,"\n\nPingback server data\n");
+
+			// Assuming there's a "http://" bit, let's get rid of it
+			$host_clear = substr($pingback_server_url, 7);
+
+			//  the trailing slash marks the end of the server name
+			$host_end = strpos($host_clear, '/');
+
+			// Another clear cut
+			$host_len = $host_end-$host_start;
+			$host = substr($host_clear, 0, $host_len);
+			debug_fwrite($log, 'host: '.$host."\n");
+
+			// If we got the server name right, the rest of the string is the server path
+			$path = substr($host_clear,$host_end);
+			debug_fwrite($log, 'path: '.$path."\n\n");
+
+			 // Now, the RPC call
+			$method = 'pingback.ping';
+			debug_fwrite($log, 'Page Linked To: '.$pagelinkedto."\n");
+			debug_fwrite($log, 'Page Linked From: ');
+			$pagelinkedfrom = get_permalink($post_ID);
+			debug_fwrite($log, $pagelinkedfrom."\n");
+
+			$client = new xmlrpc_client($path, $host, 80);
+			$message = new xmlrpcmsg($method, array(new xmlrpcval($pagelinkedfrom), new xmlrpcval($pagelinkedto)));
+			$result = $client->send($message);
+			if ($result){
+				if (!$result->value()){
+					debug_fwrite($log, $result->faultCode().' -- '.$result->faultString());
+				} else {
+					$value = xmlrpc_decode($result->value());
+					if (is_array($value)) {
+						$value_arr = '';
+						foreach($value as $blah) {
+							$value_arr .= $blah.' |||| ';
+						}
+						debug_fwrite($log, $value_arr);
+					} else {
+						debug_fwrite($log, $value);
+					}
+				}
+			}
+			@fclose($fp);
+		}
+	}
+
+	debug_fwrite($log, "\nEND: ".time()."\n****************************\n\r");
+	debug_fclose($log);
+}
+
+
+
 ?>
