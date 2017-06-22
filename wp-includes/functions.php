@@ -148,5 +148,62 @@ function mysql2date($dateformatstring, $mysqlstring, $use_b2configmonthsdays = 1
 	return $j;
 }
 
+function current_time($type) {
+	$time_difference = get_settings('time_difference');
+	switch ($type) {
+		case 'mysql':
+			return date('Y-m-d H:i:s', (time() + ($time_difference * 3600) ) );
+			break;
+		case 'timestamp':
+			return (time() + ($time_difference * 3600) );
+			break;
+	}
+}
+
+function addslashes_gpc($gpc) {
+	if (!get_magic_quotes_gpc()) {
+		$gpc = addslashes($gpc);
+	}
+	return $gpc;
+}
+
+function date_i18n($dateformatstring, $unixtimestamp) {
+	global $month, $weekday;
+	$i = $unixtimestamp; 
+	if ((!empty($month)) && (!empty($weekday))) {
+		$datemonth = $month[date('m', $i)];
+		$dateweekday = $weekday[date('w', $i)];
+		$dateformatstring = ' '.$dateformatstring;
+		$dateformatstring = preg_replace("/([^\\\])D/", "\\1".backslashit(substr($dateweekday, 0, 3)), $dateformatstring);
+		$dateformatstring = preg_replace("/([^\\\])F/", "\\1".backslashit($datemonth), $dateformatstring);
+		$dateformatstring = preg_replace("/([^\\\])l/", "\\1".backslashit($dateweekday), $dateformatstring);
+		$dateformatstring = preg_replace("/([^\\\])M/", "\\1".backslashit(substr($datemonth, 0, 3)), $dateformatstring);
+		$dateformatstring = substr($dateformatstring, 1, strlen($dateformatstring)-1);
+	}
+	$j = @date($dateformatstring, $i);
+	return $j;
+	}
+
+
+
+function get_weekstartend($mysqlstring, $start_of_week) {
+	$my = substr($mysqlstring,0,4);
+	$mm = substr($mysqlstring,8,2);
+	$md = substr($mysqlstring,5,2);
+	$day = mktime(0,0,0, $md, $mm, $my);
+	$weekday = date('w',$day);
+	$i = 86400;
+	while ($weekday > $start_of_week) {
+		$weekday = date('w',$day);
+		$day = $day - 86400;
+		$i = 0;
+	}
+	$week['start'] = $day + 86400 - $i;
+	$week['end']   = $day + 691199;
+	return $week;
+}
+
+
+
 
 ?>
