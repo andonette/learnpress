@@ -289,5 +289,24 @@ function convert_smilies($text) {
 	return $output;
 }
 
+function antispambot($emailaddy, $mailto=0) {
+	$emailNOSPAMaddy = '';
+	srand ((float) microtime() * 1000000);
+	for ($i = 0; $i < strlen($emailaddy); $i = $i + 1) {
+		$j = floor(rand(0, 1+$mailto));
+		if ($j==0) {
+			$emailNOSPAMaddy .= '&#'.ord(substr($emailaddy,$i,1)).';';
+		} elseif ($j==1) {
+			$emailNOSPAMaddy .= substr($emailaddy,$i,1);
+		} elseif ($j==2) {
+			$emailNOSPAMaddy .= '%'.zeroise(dechex(ord(substr($emailaddy, $i, 1))), 2);
+		}
+	}
+	$emailNOSPAMaddy = str_replace('@','&#64;',$emailNOSPAMaddy);
+	return $emailNOSPAMaddy;
+}
+
+
+
 
 ?>
