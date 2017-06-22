@@ -9,4 +9,5 @@ require_once(ABSPATH.WPINC."/class-xmlrpc.php");
 require_once(ABSPATH.WPINC."/class-xmlrpcs.php");
 require_once(ABSPATH.WPINC."/template-functions.php");
 require_once(ABSPATH.WPINC."/functions.php");
+require_once(ABSPATH.WPINC."/vars.php");
 ?>
