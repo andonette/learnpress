@@ -74,5 +74,54 @@ function sanitize_title($title) {
 	return $title;
 }
 
+function popuplinks($text) {
+	// Comment text in popup windows should be filtered through this.
+	// Right now it's a moderately dumb function, ideally it would detect whether
+	// a target or rel attribute was already there and adjust its actions accordingly.
+	$text = preg_replace('/<a (.+?)>/i', "<a $1 target='_blank' rel='external'>", $text);
+	return $text;
+}
+
+function autobrize($content) {
+	$content = preg_replace("/<br>\n/", "\n", $content);
+	$content = preg_replace("/<br \/>\n/", "\n", $content);
+	$content = preg_replace("/(\015\012)|(\015)|(\012)/", "<br />\n", $content);
+	return $content;
+	}
+function unautobrize($content) {
+	$content = preg_replace("/<br>\n/", "\n", $content);   //for PHP versions before 4.0.5
+	$content = preg_replace("/<br \/>\n/", "\n", $content);
+	return $content;
+	}
+
+
+function format_to_edit($content) {
+	global $autobr;
+	$content = stripslashes($content);
+	if ($autobr) { $content = unautobrize($content); }
+	$content = htmlspecialchars($content);
+	return $content;
+	}
+function format_to_post($content) {
+	global $post_autobr,$comment_autobr;
+	$content = addslashes($content);
+	if ($post_autobr || $comment_autobr) { $content = autobrize($content); }
+	return $content;
+	}
+
+
+function zeroise($number,$threshold) { // function to add leading zeros when necessary
+	$l=strlen($number);
+	if ($l<$threshold)
+		for ($i=0; $i<($threshold-$l); $i=$i+1) { $number='0'.$number;	}
+	return $number;
+	}
+
+
+function backslashit($string) {
+	$string = preg_replace('/([a-z])/i', '\\\\\1', $string);
+	return $string;
+}
+
 
 ?>
