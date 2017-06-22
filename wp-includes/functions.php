@@ -1166,6 +1166,173 @@ function sanitise_html_attributes($text) {
     return $text;
 }
 
+/*
+ balanceTags
+ 
+ Balances Tags of string using a modified stack.
+ 
+ @param text      Text to be balanced
+ @return          Returns balanced text
+ @author          Leonard Lin (leonard@acm.org)
+ @version         v1.1
+ @date            November 4, 2001
+ @license         GPL v2.0
+ @notes           
+ @changelog       
+             1.2  ***TODO*** Make better - change loop condition to $text
+             1.1  Fixed handling of append/stack pop order of end text
+                  Added Cleaning Hooks
+             1.0  First Version
+*/
+function balanceTags($text, $is_comment = 0) {
+	global $use_balanceTags;
+
+	if ($is_comment) {
+        $text = sanitise_html_attributes($text);
+	}
+	
+	if ($use_balanceTags == 0) {
+		return $text;
+	}
+
+	$tagstack = array();
+	$stacksize = 0;
+	$tagqueue = '';
+	$newtext = '';
+
+	# b2 bug fix for comments - in case you REALLY meant to type '< !--'
+	$text = str_replace('< !--', '<    !--', $text);
+
+	# b2 bug fix for LOVE <3 (and other situations with '<' before a number)
+	$text = preg_replace('#<([0-9]{1})#', '&lt;$1', $text);
+
+
+	while (preg_match("/<(\/?\w*)\s*([^>]*)>/",$text,$regex)) {
+		$newtext = $newtext . $tagqueue;
+
+		$i = strpos($text,$regex[0]);
+		$l = strlen($tagqueue) + strlen($regex[0]);
+
+		// clear the shifter
+		$tagqueue = '';
+
+		// Pop or Push
+		if ($regex[1][0] == "/") { // End Tag
+			$tag = strtolower(substr($regex[1],1));
+
+			// if too many closing tags
+			if($stacksize <= 0) { 
+				$tag = '';
+				//or close to be safe $tag = '/' . $tag;
+			}
+			// if stacktop value = tag close value then pop
+			else if ($tagstack[$stacksize - 1] == $tag) { // found closing tag
+				$tag = '</' . $tag . '>'; // Close Tag
+				// Pop
+				array_pop ($tagstack);
+				$stacksize--;
+			} else { // closing tag not at top, search for it
+				for ($j=$stacksize-1;$j>=0;$j--) {
+					if ($tagstack[$j] == $tag) {
+					// add tag to tagqueue
+						for ($k=$stacksize-1;$k>=$j;$k--){
+							$tagqueue .= '</' . array_pop ($tagstack) . '>';
+							$stacksize--;
+						}
+						break;
+					}
+				}
+				$tag = '';
+			}
+		} else { // Begin Tag
+			$tag = strtolower($regex[1]);
+
+			// Tag Cleaning
+
+			// Push if not img or br or hr
+			if($tag != 'br' && $tag != 'img' && $tag != 'hr') {
+				$stacksize = array_push ($tagstack, $tag);
+			}
+
+			// Attributes
+			// $attributes = $regex[2];
+			$attributes = $regex[2];
+			if($attributes) {
+				$attributes = ' '.$attributes;
+			}
+
+			$tag = '<'.$tag.$attributes.'>';
+		}
+
+		$newtext .= substr($text,0,$i) . $tag;
+		$text = substr($text,$i+$l);
+	}  
+
+	// Clear Tag Queue
+	$newtext = $newtext . $tagqueue;
+
+	// Add Remaining text
+	$newtext .= $text;
+
+	// Empty Stack
+	while($x = array_pop($tagstack)) {
+		$newtext = $newtext . '</' . $x . '>'; // Add remaining tags to close      
+	}
+
+	# b2 fix for the bug with HTML comments
+	$newtext = str_replace("< !--","<!--",$newtext);
+	$newtext = str_replace("<    !--","< !--",$newtext);
+
+	return $newtext;
+}
+
+function doGeoUrlHeader($posts) {
+    global $use_default_geourl,$default_geourl_lat,$default_geourl_lon;
+    if (count($posts) == 1) {
+        // there's only one result  see if it has a geo code
+        $row = $posts[0];
+        $lat = $row->post_lat;
+        $lon = $row->post_lon;
+        $title = $row->post_title;
+        if(($lon != null) && ($lat != null) ) {
+            echo "<meta name=\"ICBM\" content=\"".$lat.", ".$lon."\" />\n";
+            echo "<meta name=\"DC.title\" content=\"".convert_chars(strip_tags(get_bloginfo("name")),"unicode")." - ".$title."\" />\n";
+            echo "<meta name=\"geo.position\" content=\"".$lat.";".$lon."\" />\n";
+            return;
+        }
+    } else {
+        if($use_default_geourl) {
+            // send the default here 
+            echo "<meta name=\"ICBM\" content=\"".$default_geourl_lat.", ".$default_geourl_lon."\" />\n";
+            echo "<meta name=\"DC.title\" content=\"".convert_chars(strip_tags(get_bloginfo("name")),"unicode")."\" />\n";
+            echo "<meta name=\"geo.position\" content=\"".$default_geourl_lat.";".$default_geourl_lon."\" />\n";
+        }
+    }
+}
+
+function getRemoteFile($host,$path) {
+    $fp = fsockopen($host, 80, $errno, $errstr);
+    if ($fp) {
+        fputs($fp,"GET $path HTTP/1.0\r\nHost: $host\r\n\r\n");
+        while ($line = fgets($fp, 4096)) {
+            $lines[] = $line;
+        }
+        fclose($fp);
+        return $lines;
+    } else {
+        return false;
+    }
+}
+
+function pingGeoURL($blog_ID) {
+    global $blodotgsping_url;
+
+    $ourUrl = $blodotgsping_url."/index.php?p=".$blog_ID;
+    $host="geourl.org";
+    $path="/ping/?p=".$ourUrl;
+    getRemoteFile($host,$path); 
+}
+
 
 
 ?>
