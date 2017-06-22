@@ -6,4 +6,5 @@ $HTTP_RAW_POST_DATA = trim($HTTP_RAW_POST_DATA);
 include('wp-config.php');
 
 require_once(ABSPATH.WPINC."/class-xmlrpc.php");
+require_once(ABSPATH.WPINC."/class-xmlrpcs.php");
 ?>
