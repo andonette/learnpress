@@ -441,5 +441,73 @@ function get_usernumposts($userid) {
 	return $wpdb->get_var("SELECT COUNT(*) FROM $tableposts WHERE post_author = $userid");
 }
 
+// Take a link like 'http://example.com/blog/something'
+	// and extract just the '/something':
+	$uri = preg_replace("#$siteurl#i", '', $url);
+
+	// on failure, preg_replace just returns the subject string
+	// so if $uri and $siteurl are the same, they didn't match:
+	if ($uri == $siteurl) 
+		return 0;
+		
+	// First, check to see if there is a 'p=N' to match against:
+	preg_match('#[?&]p=(\d+)#', $uri, $values);
+	$p = intval($values[1]);
+	if ($p) return $p;
+	
+	// Match $uri against our permalink structure
+	$permalink_structure = get_settings('permalink_structure');
+	
+	// Matt's tokenizer code
+	$rewritecode = array(
+		'%year%',
+		'%monthnum%',
+		'%day%',
+		'%postname%',
+		'%post_id%'
+	);
+	$rewritereplace = array(
+		'([0-9]{4})?',
+		'([0-9]{1,2})?',
+		'([0-9]{1,2})?',
+		'([0-9a-z-]+)?',
+		'([0-9]+)?'
+	);
+
+	// Turn the structure into a regular expression
+	$matchre = str_replace('/', '/?', $permalink_structure);
+	$matchre = str_replace($rewritecode, $rewritereplace, $matchre);
+
+	// Extract the key values from the uri:
+	preg_match("#$matchre#",$uri,$values);
+
+	// Extract the token names from the structure:
+	preg_match_all("#%(.+?)%#", $permalink_structure, $tokens);
+
+	for($i = 0; $i < count($tokens[1]); $i++) {
+		$name = $tokens[1][$i];
+		$value = $values[$i+1];
+
+		// Create a variable named $year, $monthnum, $day, $postname, or $post_id:
+		$$name = $value;
+	}
+	
+	// If using %post_id%, we're done:
+	if (intval($post_id)) return intval($post_id);
+
+	// Otherwise, build a WHERE clause, making the values safe along the way:
+	if ($year) $where .= " AND YEAR(post_date) = " . intval($year);
+	if ($monthnum) $where .= " AND MONTH(post_date) = " . intval($monthnum);
+	if ($day) $where .= " AND DAYOFMONTH(post_date) = " . intval($day);
+	if ($postname) $where .= " AND post_name = '" . $wpdb->escape($postname) . "' ";
+
+	// Run the query to get the post ID:
+	$id = intval($wpdb->get_var("SELECT ID FROM $tableposts WHERE 1 = 1 " . $where));
+
+	return $id;
+}
+
+
+
 
 ?>
