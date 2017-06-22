@@ -507,7 +507,28 @@ function get_usernumposts($userid) {
 	return $id;
 }
 
+function get_alloptions() {
+    global $tableoptions, $wpdb;
+    $options = $wpdb->get_results("SELECT option_name, option_value FROM $tableoptions");
+    if ($options) {
+        foreach ($options as $option) {
+            $all_options->{$option->option_name} = $option->option_value;
+        }
+    }
+    return $all_options;
+}
 
+function update_option($option_name, $newvalue) {
+	global $wpdb, $tableoptions;
+	// No validation at the moment
+	$wpdb->query("UPDATE $tableoptions SET option_value = '$newvalue' WHERE option_name = '$option_name'");
+}
+
+function add_option() {
+	// Adds an option if it doesn't already exist
+	global $wpdb, $tableoptions;
+	// TODO
+}
 
 
 ?>
