@@ -530,5 +530,123 @@ function add_option() {
 	// TODO
 }
 
+function get_postdata($postid) {
+	global $post, $tableusers, $tablecategories, $tableposts, $tablecomments, $wpdb;
+
+	$post = $wpdb->get_row("SELECT * FROM $tableposts WHERE ID = $postid");
+	
+	$postdata = array (
+		'ID' => $post->ID, 
+		'Author_ID' => $post->post_author, 
+		'Date' => $post->post_date, 
+		'Content' => $post->post_content, 
+		'Excerpt' => $post->post_excerpt, 
+		'Title' => $post->post_title, 
+		'Category' => $post->post_category,
+		'Lat' => $post->post_lat,
+		'Lon' => $post->post_lon,
+		'post_status' => $post->post_status,
+		'comment_status' => $post->comment_status,
+		'ping_status' => $post->ping_status,
+		'post_password' => $post->post_password,
+		'to_ping' => $post->to_ping,
+		'pinged' => $post->pinged
+	);
+	return $postdata;
+}
+
+function get_postdata2($postid=0) { // less flexible, but saves DB queries
+	global $post;
+	$postdata = array (
+		'ID' => $post->ID, 
+		'Author_ID' => $post->post_author,
+		'Date' => $post->post_date,
+		'Content' => $post->post_content,
+		'Excerpt' => $post->post_excerpt,
+		'Title' => $post->post_title,
+		'Category' => $post->post_category,
+		'Lat' => $post->post_lat,
+		'Lon' => $post->post_lon,
+		'post_status' => $post->post_status,
+		'comment_status' => $post->comment_status,
+		'ping_status' => $post->ping_status,
+		'post_password' => $post->post_password
+		);
+	return $postdata;
+}
+
+function get_commentdata($comment_ID,$no_cache=0,$include_unapproved=false) { // less flexible, but saves DB queries
+	global $postc,$id,$commentdata,$tablecomments, $wpdb;
+	if ($no_cache) {
+		$query = "SELECT * FROM $tablecomments WHERE comment_ID = $comment_ID";
+		if (false == $include_unapproved) {
+		    $query .= " AND comment_approved = '1'";
+		}
+    		$myrow = $wpdb->get_row($query, ARRAY_A);
+	} else {
+		$myrow['comment_ID']=$postc->comment_ID;
+		$myrow['comment_post_ID']=$postc->comment_post_ID;
+		$myrow['comment_author']=$postc->comment_author;
+		$myrow['comment_author_email']=$postc->comment_author_email;
+		$myrow['comment_author_url']=$postc->comment_author_url;
+		$myrow['comment_author_IP']=$postc->comment_author_IP;
+		$myrow['comment_date']=$postc->comment_date;
+		$myrow['comment_content']=$postc->comment_content;
+		$myrow['comment_karma']=$postc->comment_karma;
+		if (strstr($myrow['comment_content'], '<trackback />')) {
+			$myrow['comment_type'] = 'trackback';
+		} elseif (strstr($myrow['comment_content'], '<pingback />')) {
+			$myrow['comment_type'] = 'pingback';
+		} else {
+			$myrow['comment_type'] = 'comment';
+		}
+	}
+	return $myrow;
+}
+
+function get_catname($cat_ID) {
+	global $tablecategories,$cache_catnames,$use_cache, $wpdb;
+	if ((!$cache_catnames) || (!$use_cache)) {
+        $results = $wpdb->get_results("SELECT * FROM $tablecategories") or die('Oops, couldn\'t query the db for categories.');
+		foreach ($results as $post) {
+			$cache_catnames[$post->cat_ID] = $post->cat_name;
+		}
+	}
+	$cat_name = $cache_catnames[$cat_ID];
+	return $cat_name;
+}
+
+function profile($user_login) {
+	global $user_data;
+	echo "<a href='profile.php?user=".$user_data->user_login."' onclick=\"javascript:window.open('profile.php?user=".$user_data->user_login."','Profile','toolbar=0,status=1,location=0,directories=0,menuBar=1,scrollbars=1,resizable=0,width=480,height=320,left=100,top=100'); return false;\">$user_login</a>";
+}
+
+function dropdown_categories($default = 0) {
+	global $post, $tablecategories, $tablepost2cat, $mode, $wpdb;
+	$categories = $wpdb->get_results("SELECT * FROM $tablecategories ORDER BY cat_name");
+
+	if ($post->ID) {
+		$postcategories = $wpdb->get_col("
+			SELECT category_id 
+			FROM  $tablecategories, $tablepost2cat 
+			WHERE $tablepost2cat.category_id = cat_ID AND $tablepost2cat.post_id = $post->ID
+			");
+	} else {
+		$postcategories[] = $default;
+	}
+	
+	foreach($categories as $category) {
+		++$i;
+		$category->cat_name = stripslashes($category->cat_name);
+		echo "\n<label for='category-$i' class='selectit'><input value='$category->cat_ID' type='checkbox' name='post_category[]' id='category-$i'";
+		if ($postcategories && in_array($category->cat_ID, $postcategories))
+			echo ' checked="checked"';
+		echo " /> $category->cat_name</label> ";
+	}
+
+}
+
+
+
 
 ?>
