@@ -898,6 +898,100 @@ function get_the_title() {
 	return $output;
 }
 
+function the_content($more_link_text='(more...)', $stripteaser=0, $more_file='') {
+	$content = get_the_content($more_link_text, $stripteaser, $more_file);
+	$content = convert_bbcode($content);
+	$content = convert_gmcode($content);
+	$content = convert_smilies($content);
+	$content = convert_chars($content, 'html');
+	$content = apply_filters('the_content', $content);
+	echo $content;
+}
+
+function the_content_rss($more_link_text='(more...)', $stripteaser=0, $more_file='', $cut = 0, $encode_html = 0) {
+	$content = get_the_content($more_link_text, $stripteaser, $more_file);
+	$content = convert_bbcode($content);
+	$content = convert_gmcode($content);
+	$content = convert_chars($content, 'unicode');
+	if ($cut && !$encode_html) {
+		$encode_html = 2;
+	}
+	if ($encode_html == 1) {
+		$content = htmlspecialchars($content);
+		$cut = 0;
+	} elseif ($encode_html == 0) {
+		$content = make_url_footnote($content);
+	} elseif ($encode_html == 2) {
+		$content = strip_tags($content);
+	}
+	if ($cut) {
+		$blah = explode(' ', $content);
+		if (count($blah) > $cut) {
+			$k = $cut;
+			$use_dotdotdot = 1;
+		} else {
+			$k = count($blah);
+			$use_dotdotdot = 0;
+		}
+		for ($i=0; $i<$k; $i++) {
+			$excerpt .= $blah[$i].' ';
+		}
+		$excerpt .= ($use_dotdotdot) ? '...' : '';
+		$content = $excerpt;
+	}
+	echo $content;
+}
+
+function the_content_unicode($more_link_text='(more...)', $stripteaser=0, $more_file='') {
+	$content = get_the_content($more_link_text, $stripteaser, $more_file);
+	$content = convert_bbcode($content);
+	$content = convert_gmcode($content);
+	$content = convert_smilies($content);
+	$content = convert_chars($content, 'unicode');
+	$content = apply_filters('the_content_unicode', $content);
+	echo $content;
+}
+
+function get_the_content($more_link_text='(more...)', $stripteaser=0, $more_file='') {
+	global $id, $post, $more, $c, $withcomments, $page, $pages, $multipage, $numpages;
+	global $HTTP_SERVER_VARS, $HTTP_COOKIE_VARS, $preview, $cookiehash;
+	global $querystring_start, $querystring_equal, $querystring_separator;
+    global $pagenow;
+	$output = '';
+
+	if (!empty($post->post_password)) { // if there's a password
+		if ($HTTP_COOKIE_VARS['wp-postpass_'.$cookiehash] != $post->post_password) {  // and it doesn't match the cookie
+			$output = get_the_password_form();
+			return $output;
+		}
+	}
+
+	if ($more_file != '') {
+		$file = $more_file;
+	} else {
+		$file = $pagenow; //$HTTP_SERVER_VARS['PHP_SELF'];
+	}
+	$content = $pages[$page-1];
+	$content = explode('<!--more-->', $content);
+	if ((preg_match('/<!--noteaser-->/', $post->post_content) && ((!$multipage) || ($page==1))))
+		$stripteaser = 1;
+	$teaser = $content[0];
+	if (($more) && ($stripteaser))
+		$teaser = '';
+	$output .= $teaser;
+	if (count($content)>1) {
+		if ($more) {
+			$output .= '<a id="more-'.$id.'"></a>'.$content[1];
+		} else {
+			$output .= " <a href='". get_permalink() . "#more-$id'>$more_link_text</a>";
+		}
+	}
+	if ($preview) { // preview fix for javascript bug with foreign languages
+		$output =  preg_replace('/\%u([0-9A-F]{4,4})/e',  "'&#'.base_convert('\\1',16,10).';'", $output);
+	}
+	return $output;
+}
+
 
 
 ?>
