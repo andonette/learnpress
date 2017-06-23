@@ -992,6 +992,98 @@ function get_the_content($more_link_text='(more...)', $stripteaser=0, $more_file
 	return $output;
 }
 
+function the_excerpt() {
+	$excerpt = get_the_excerpt();
+	$excerpt = convert_bbcode($excerpt);
+	$excerpt = convert_gmcode($excerpt);
+	$excerpt = convert_smilies($excerpt);
+	$excerpt = convert_chars($excerpt, 'html');
+	$excerpt = apply_filters('the_excerpt', $excerpt);
+	echo $excerpt;
+}
+
+function the_excerpt_rss($cut = 0, $encode_html = 0) {
+	$output = get_the_excerpt(true);
+	$output = convert_bbcode($output);
+	$output = convert_gmcode($output);
+	$output = convert_chars($output, 'unicode');
+	if ($cut && !$encode_html) {
+		$encode_html = 2;
+	}
+	if ($encode_html == 1) {
+		$output = htmlspecialchars($output);
+		$cut = 0;
+	} elseif ($encode_html == 0) {
+		$output = make_url_footnote($output);
+	} elseif ($encode_html == 2) {
+		$output = strip_tags($output);
+	}
+	if ($cut) {
+        $excerpt = '';
+		$blah = explode(' ', $output);
+		if (count($blah) > $cut) {
+			$k = $cut;
+			$use_dotdotdot = 1;
+		} else {
+			$k = count($blah);
+			$use_dotdotdot = 0;
+		}
+		for ($i=0; $i<$k; $i++) {
+			$excerpt .= $blah[$i].' ';
+		}
+		$excerpt .= ($use_dotdotdot) ? '...' : '';
+		$output = $excerpt;
+	}
+	echo $output;
+}
+
+function the_excerpt_unicode() {
+	$excerpt = get_the_excerpt();
+	$excerpt = convert_bbcode($excerpt);
+	$excerpt = convert_gmcode($excerpt);
+	$excerpt = convert_smilies($excerpt);
+	$excerpt = convert_chars($excerpt, 'unicode');
+	$excerpt = apply_filters('the_excerpt_unicode', $excerpt);
+	echo $excerpt;
+}
+
+function get_the_excerpt($fakeit = false) {
+	global $id, $post;
+	global $HTTP_SERVER_VARS, $HTTP_COOKIE_VARS, $preview, $cookiehash;
+	$output = '';
+	$output = stripslashes($post->post_excerpt);
+	if (!empty($post->post_password)) { // if there's a password
+		if ($HTTP_COOKIE_VARS['wp-postpass_'.$cookiehash] != $post->post_password) {  // and it doesn't match the cookie
+			$output = "There is no excerpt because this is a protected post.";
+			return $output;
+		}
+	}
+    //if we haven't got an excerpt, make one in the style of the rss ones
+    if (($output == '') && $fakeit) {
+        $output = get_the_content();
+        $output = strip_tags($output);
+        $blah = explode(' ', $output);
+        $excerpt_length = 120;
+        if (count($blah) > $excerpt_length) {
+			$k = $excerpt_length;
+			$use_dotdotdot = 1;
+		} else {
+			$k = count($blah);
+			$use_dotdotdot = 0;
+		}
+        $excerpt = '';
+		for ($i=0; $i<$k; $i++) {
+			$excerpt .= $blah[$i].' ';
+		}
+		$excerpt .= ($use_dotdotdot) ? '...' : '';
+		$output = $excerpt;
+    } // end if no excerpt
+	if ($preview) { // preview fix for javascript bug with foreign languages
+		$output =  preg_replace('/\%u([0-9A-F]{4,4})/e',  "'&#'.base_convert('\\1',16,10).';'", $output);
+	}
+	return $output;
+}
+
 
 
 ?>
