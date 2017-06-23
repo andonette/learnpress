@@ -294,4 +294,175 @@ function get_archives($type='', $limit='', $format='html', $before = "", $after 
 	}
 }
 
+function get_calendar($daylength = 1) {
+	global $wpdb, $HTTP_GET_VARS, $m, $monthnum, $year, $timedifference, $month, $weekday, $tableposts, $posts;
+
+    // Quick check. If we have no posts at all, abort!
+    if (!$posts) {
+        $gotsome = $wpdb->get_var("SELECT ID from $tableposts WHERE post_status = 'publish' ORDER BY post_date DESC LIMIT 1");
+        if (!$gotsome)
+            return;
+    }
+
+	if (isset($HTTP_GET_VARS['w'])) {
+		$w = ''.intval($HTTP_GET_VARS['w']);
+	}
+	$time_difference = get_settings('time_difference');
+
+	// Let's figure out when we are
+	if (!empty($monthnum) && !empty($year)) {
+		$thismonth = ''.intval($monthnum);
+		$thisyear = ''.intval($year);
+	} elseif (!empty($w)) {
+		// We need to get the month from MySQL
+		$thisyear = ''.intval(substr($m, 0, 4));
+		$d = (($w - 1) * 7) + 6; //it seems MySQL's weeks disagree with PHP's
+		$thismonth = $wpdb->get_var("SELECT DATE_FORMAT((DATE_ADD('${thisyear}0101', INTERVAL $d DAY) ), '%m')");
+	} elseif (!empty($m)) {
+		$calendar = substr($m, 0, 6);
+		$thisyear = ''.intval(substr($m, 0, 4));
+		if (strlen($m) < 6) {
+			$thismonth = '01';
+		} else {
+			$thismonth = ''.intval(substr($m, 4, 2));
+		}
+	} else {
+		$thisyear = intval(date('Y', time()+($time_difference * 3600)));
+		$thismonth = intval(date('m', time()+($time_difference * 3600)));
+	}
+
+	$unixmonth = mktime(0, 0 , 0, $thismonth, 1, $thisyear);
+
+	// Get the next and previous month and year with at least one post
+	$previous = $wpdb->get_row("SELECT DISTINCT MONTH( post_date ) AS month, YEAR( post_date ) AS year
+			FROM $tableposts
+			WHERE post_date < '$thisyear-$thismonth-01'
+			AND post_status = 'publish'
+							  ORDER BY post_date DESC
+							  LIMIT 1");
+	$next = $wpdb->get_row("SELECT  DISTINCT MONTH( post_date ) AS month, YEAR( post_date ) AS year
+			FROM $tableposts
+			WHERE post_date >  '$thisyear-$thismonth-01'
+			AND MONTH( post_date ) != MONTH( '$thisyear-$thismonth-01' )
+			AND post_status = 'publish'
+							  ORDER  BY post_date ASC
+							  LIMIT 1");
+
+	echo '<table id="wp-calendar">
+	<caption>' . $month[zeroise($thismonth, 2)] . ' ' . date('Y', $unixmonth) . '</caption>
+	<thead>
+	<tr>';
+	foreach ($weekday as $wd) {
+		echo "\n\t\t<th abbr='$wd' scope='col' title='$wd'>" . substr($wd, 0, $daylength) . '</th>';
+	}
+
+	echo '
+	</tr>
+	</thead>
+
+	<tfoot>
+	<tr>';
+
+	if ($previous) {
+		echo "\n\t\t".'<td abbr="' . $month[zeroise($previous->month, 2)] . '" colspan="3" id="prev"><a href="' .
+				get_month_link($previous->year, $previous->month) . '" title="View posts for ' . $month[zeroise($previous->month, 2)] . ' ' .
+				date('Y', mktime(0, 0 , 0, $previous->month, 1, $previous->year)) . '">&laquo; ' . substr($month[zeroise($previous->month, 2)], 0, 3) . '</a></td>';
+	} else {
+		echo "\n\t\t".'<td colspan="3" id="prev" class="pad">&nbsp;</td>';
+	}
+
+	echo "\n\t\t".'<td class="pad">&nbsp;</td>';
+
+	if ($next) {
+		echo "\n\t\t".'<td abbr="' . $month[zeroise($next->month, 2)] . '" colspan="3" id="next"><a href="' .
+				get_month_link($next->year, $next->month) . '" title="View posts for ' . $month[zeroise($next->month, 2)] . ' ' .
+				date('Y', mktime(0, 0 , 0, $next->month, 1, $next->year)) . '">' . substr($month[zeroise($next->month, 2)], 0, 3) . ' &raquo;</a></td>';
+	} else {
+		echo "\n\t\t".'<td colspan="3" id="next" class="pad">&nbsp;</td>';
+	}
+
+	echo '
+	</tr>
+	</tfoot>
+
+	<tbody>
+	<tr>';
+
+	// Get days with posts
+	$dayswithposts = $wpdb->get_results("SELECT DISTINCT DAYOFMONTH(post_date)
+			FROM $tableposts WHERE MONTH(post_date) = $thismonth
+			AND YEAR(post_date) = $thisyear
+			AND post_status = 'publish'
+			AND post_date < '" . date("Y-m-d H:i:s", (time() + ($time_difference * 3600)))."'", ARRAY_N);
+	if ($dayswithposts) {
+		foreach ($dayswithposts as $daywith) {
+			$daywithpost[] = $daywith[0];
+		}
+	} else {
+		$daywithpost = array();
+	}
+
+
+
+	if (strstr($_SERVER["HTTP_USER_AGENT"], "MSIE") ||
+		  strstr(strtolower($_SERVER["HTTP_USER_AGENT"]), "camino")) {
+		$ak_title_separator = "\n";
+	} else {
+		$ak_title_separator = ", ";
+	}
+
+	$ak_titles_for_day = array();
+	$ak_post_titles = $wpdb->get_results("SELECT post_title, DAYOFMONTH(post_date) as dom "
+										 ."FROM $tableposts "
+										 ."WHERE YEAR(post_date) = '$thisyear' "
+										 ."AND MONTH(post_date) = '$thismonth' "
+										 ."AND post_date < '".date("Y-m-d H:i:s", (time() + ($time_difference * 3600)))."' "
+										 ."AND post_status = 'publish'"
+										);
+	if ($ak_post_titles) {
+		foreach ($ak_post_titles as $ak_post_title) {
+			$ak_titles_for_day["$ak_post_title->dom"] = '';
+			if (empty($ak_titles_for_day["$ak_post_title->dom"])) { // first one
+				$ak_titles_for_day["$ak_post_title->dom"] .= htmlspecialchars(stripslashes($ak_post_title->post_title));
+			} else {
+				$ak_titles_for_day["$ak_post_title->dom"] .= $ak_title_separator . htmlspecialchars(stripslashes($ak_post_title->post_title));
+			}
+		}
+	}
+
+
+	// See how much we should pad in the beginning
+	$pad = intval(date('w', $unixmonth));
+	if (0 != $pad) echo "\n\t\t<td colspan='$pad' class='pad'>&nbsp;</td>";
+
+	$daysinmonth = intval(date('t', $unixmonth));
+	for ($day = 1; $day <= $daysinmonth; ++$day) {
+		if (isset($newrow) && $newrow)
+			echo "\n\t</tr>\n\t<tr>\n\t\t";
+		$newrow = false;
+
+		if ($day == date('j', (time() + ($time_difference * 3600))) && $thismonth == date('m', time()+($time_difference * 3600)))
+			echo '<td id="today">';
+		else
+			echo "<td>";
+
+		if (in_array($day, $daywithpost)) { // any posts today?
+			echo '<a href="' . get_day_link($thisyear, $thismonth, $day) . "\" title=\"$ak_titles_for_day[$day]\">$day</a>";
+		} else {
+			echo $day;
+		}
+		echo '</td>';
+
+		if (6 == date('w', mktime(0, 0 , 0, $thismonth, $day, $thisyear)))
+			$newrow = true;
+	}
+
+	$pad = 7 - date('w', mktime(0, 0 , 0, $thismonth, $day, $thisyear));
+	if (0 != $pad)
+		echo "\n\t\t<td class='pad' colspan='$pad'>&nbsp;</td>";
+
+	echo "\n\t</tr>\n\t</tbody>\n\t</table>";
+}
+
+
 ?>
