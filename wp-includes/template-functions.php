@@ -178,4 +178,17 @@ function single_month_title($prefix = '', $display = true ) {
 	}
 }
 
+/* link navigation hack by Orien http://icecode.com/ */
+function get_archives_link($url, $text, $format = "html", $before = "", $after = "") {
+	if ('link' == $format) {
+		return "\t".'<link rel="archives" title="'.$text.'" href="'.$url.'" />'."\n";
+	} else if ('option' == $format) {
+		return '<option value="'.$url.'">'.$text.'</option>'."\n";
+	} else if ('html' == $format) {
+		return "\t".'<li><a href="'.$url.'" title="'.$text.'">'.$text.'</a>'.$after.'</li>'."\n";
+	} else { // custom
+		return "\t".$before.'<a href="'.$url.'" title="'.$text.'">'.$text.'</a>'.$after."\n";
+	}
+}
+
 ?>
