@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /* new and improved ! now with more querystring stuff ! */
 
@@ -771,6 +771,8 @@ function print_DegreeConfluence_Url() {
     echo "http://confluence.org/confluence.php?lat=".get_Lat()."&amp;lon=".get_Lon();
 }
 
+
+
 /***** Author tags *****/
 
 function the_author() {
@@ -837,6 +839,7 @@ function the_author_posts() {
 }
 
 /***** // Author tags *****/
+
 
 
 
@@ -1084,6 +1087,7 @@ function get_the_excerpt($fakeit = false) {
 	return $output;
 }
 
+
 function link_pages($before='<br />', $after='<br />', $next_or_number='number', $nextpagelink='next page', $previouspagelink='previous page', $pagelink='%', $more_file='') {
 	global $id, $page, $numpages, $multipage, $more;
 	global $pagenow;
@@ -1322,6 +1326,9 @@ function posts_nav_link($sep=' :: ', $prelabel='<< Previous Page', $nxtlabel='Ne
 
 /***** // Post tags *****/
 
+
+
+
 /***** Category tags *****/
 
 function get_the_category() {
@@ -1534,6 +1541,9 @@ function list_cats($optionall = 1, $all = 'All', $sort_column = 'ID', $sort_orde
 }
 
 /***** // Category tags *****/
+
+
+
 
 /***** <Link> tags *****/
 
@@ -1789,6 +1799,8 @@ function permalink_comments_rss() {
 }
 
 /***** // Comment tags *****/
+
+
 
 /***** TrackBack tags *****/
 

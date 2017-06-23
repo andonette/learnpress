@@ -64,6 +64,28 @@ function wptexturize($text) {
 	return $output;
 }
 
+function wpautop($pee, $br = 1) {
+	$pee = $pee . "\n"; // just to make things a little easier, pad the end
+	$pee = preg_replace('|<br />\s*<br />|', "\n\n", $pee);
+	$pee = preg_replace('!(<(?:table|ul|ol|li|pre|form|blockquote|h[1-6])[^>]*>)!', "\n$1", $pee); // Space things out a little
+	$pee = preg_replace('!(</(?:table|ul|ol|li|pre|form|blockquote|h[1-6])>)!', "$1\n", $pee); // Space things out a little
+	$pee = preg_replace("/(\r\n|\r)/", "\n", $pee); // cross-platform newlines 
+	$pee = preg_replace("/\n\n+/", "\n\n", $pee); // take care of duplicates
+	$pee = preg_replace('/\n?(.+?)(?:\n\s*\n|\z)/s', "\t<p>$1</p>\n", $pee); // make paragraphs, including one at the end 
+	$pee = preg_replace('|<p>\s*?</p>|', '', $pee); // under certain strange conditions it could create a P of entirely whitespace 
+	$pee = preg_replace("|<p>(<li.+?)</p>|", "$1", $pee); // problem with nested lists
+	$pee = preg_replace('|<p><blockquote([^>]*)>|i', "<blockquote$1><p>", $pee);
+	$pee = str_replace('</blockquote></p>', '</p></blockquote>', $pee);
+	$pee = preg_replace('!<p>\s*(</?(?:table|tr|td|th|div|ul|ol|li|pre|select|form|blockquote|p|h[1-6])[^>]*>)!', "$1", $pee);
+	$pee = preg_replace('!(</?(?:table|tr|td|th|div|ul|ol|li|pre|select|form|blockquote|p|h[1-6])[^>]*>)\s*</p>!', "$1", $pee); 
+	if ($br) $pee = preg_replace('|(?<!<br />)\s*\n|', "<br />\n", $pee); // optionally make line breaks
+	$pee = preg_replace('!(</?(?:table|tr|td|th|div|dl|dd|dt|ul|ol|li|pre|select|form|blockquote|p|h[1-6])[^>]*>)\s*<br />!', "$1", $pee);
+	$pee = preg_replace('!<br />(\s*</?(?:p|li|div|th|pre|td|ul|ol)>)!', '$1', $pee);
+	$pee = preg_replace('/&([^#])(?![a-z]{1,8};)/', '&#038;$1', $pee);
+	
+	return $pee; 
+}
+
 function sanitize_title($title) {
     $title = strtolower($title);
 	$title = preg_replace('/&.+;/', '', $title); // kill entities
@@ -122,6 +144,7 @@ function backslashit($string) {
 	$string = preg_replace('/([a-z])/i', '\\\\\1', $string);
 	return $string;
 }
+
 
 function mysql2date($dateformatstring, $mysqlstring, $use_b2configmonthsdays = 1) {
 	global $month, $weekday;
@@ -203,7 +226,7 @@ function get_weekstartend($mysqlstring, $start_of_week) {
 	return $week;
 }
 
-unction convert_chars($content,$flag='obsolete attribute left there for backwards compatibility') { // html/unicode entities output
+function convert_chars($content,$flag='obsolete attribute left there for backwards compatibility') { // html/unicode entities output
 
 	global $use_htmltrans, $wp_htmltrans, $wp_htmltranswinuni;
 
@@ -317,6 +340,7 @@ function make_clickable($text) { // original function: phpBB, extended here for 
     return $ret;
 }
 
+
 function is_email($user_email) {
 	$chars = "/^([a-z0-9_]|\\-|\\.)+@(([a-z0-9_]|\\-)+\\.)+[a-z]{2,4}\$/i";
 	if(strstr($user_email, '@') && strstr($user_email, '.')) {
@@ -342,6 +366,7 @@ function strip_all_but_one_link($text, $mylink) {
 	}
 	return $text;
 }
+
 
 /***** // Formatting functions *****/
 
@@ -441,7 +466,12 @@ function get_usernumposts($userid) {
 	return $wpdb->get_var("SELECT COUNT(*) FROM $tableposts WHERE post_author = $userid");
 }
 
-// Take a link like 'http://example.com/blog/something'
+// examine a url (supposedly from this blog) and try to
+// determine the post ID it represents.
+function url_to_postid($url = '') {
+	global $wpdb, $tableposts, $siteurl;
+
+	// Take a link like 'http://example.com/blog/something'
 	// and extract just the '/something':
 	$uri = preg_replace("#$siteurl#i", '', $url);
 
@@ -505,6 +535,26 @@ function get_usernumposts($userid) {
 	$id = intval($wpdb->get_var("SELECT ID FROM $tableposts WHERE 1 = 1 " . $where));
 
 	return $id;
+}
+
+
+/* Options functions */
+
+function get_settings($setting) {
+	global $wpdb, $cache_settings, $use_cache, $REQUEST_URI;
+	if (strstr($REQUEST_URI, 'install.php')) return false;
+	if ((empty($cache_settings)) OR (!$use_cache)) {
+		$settings = get_alloptions();
+		$cache_settings = $settings;
+	} else {
+		$settings = $cache_settings;
+	}
+    if (!isset($settings->$setting)) {
+        error_log("get_settings: Didn't find setting $setting");
+    }
+    else {
+		return $settings->$setting;
+	}
 }
 
 function get_alloptions() {
@@ -687,7 +737,7 @@ function touch_time($edit = 1) {
 	<?php
 }
 
-unction gzip_compression() {
+function gzip_compression() {
 	global $gzip_compressed;
 		if (!$gzip_compressed) {
 		$phpver = phpversion(); //start gzip compression
@@ -709,7 +759,7 @@ unction gzip_compression() {
 	}
 }
 
-unction alert_error($msg) { // displays a warning box with an error message (original by KYank)
+function alert_error($msg) { // displays a warning box with an error message (original by KYank)
 	global $$HTTP_SERVER_VARS;
 	?>
 	<html>
@@ -784,6 +834,7 @@ function timer_stop($display=0,$precision=3) { //if called like timer_stop(1), w
     return $timetotal;
 }
 
+
 // pings Weblogs.com
 function pingWeblogs($blog_ID = 1) {
 	// original function by Dries Buytaert for Drupal
@@ -853,6 +904,7 @@ function pingBlogs($blog_ID="1") {
 		return false;
 	}
 }
+
 
 // Send a Trackback
 function trackback($trackback_url, $title, $excerpt, $ID) {
@@ -925,6 +977,7 @@ function make_url_footnote($content) {
 	$content .= $links_summary;
 	return $content;
 }
+
 
 function xmlrpc_getposttitle($content) {
 	global $post_default_title;
@@ -1368,6 +1421,7 @@ function wp_set_comment_status($comment_id, $comment_status) {
     }
 }
 
+
 /* wp_get_comment_status
    part of otaku42's comment moderation hack
    gets the current status of a comment
@@ -1482,6 +1536,7 @@ function wp_notify_moderator($comment_id) {
     
     return true;
 }
+
 
 // implementation of in_array that also should work on PHP3
 if (!function_exists('in_array')) {
