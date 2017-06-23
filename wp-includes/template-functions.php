@@ -1322,6 +1322,116 @@ function posts_nav_link($sep=' :: ', $prelabel='<< Previous Page', $nxtlabel='Ne
 
 /***** // Post tags *****/
 
+/***** Category tags *****/
+
+function get_the_category() {
+	global $post, $tablecategories, $tablepost2cat, $wpdb;
+	$categories = $wpdb->get_results("
+		SELECT category_id, cat_name, category_nicename, category_description 
+		FROM  $tablecategories, $tablepost2cat 
+		WHERE $tablepost2cat.category_id = cat_ID AND $tablepost2cat.post_id = $post->ID
+		");
+
+	return $categories;
+}
+
+function get_category_link($echo = false, $category_id, $category_nicename) {
+	global $wpdb, $tablecategories, $post, $querystring_start, $querystring_equal, $siteurl, $blogfilename;
+	$cat_ID = $category_id;
+	$permalink_structure = get_settings('permalink_structure');
+	
+	if ('' == $permalink_structure) {
+		$file = "$siteurl/$blogfilename";
+		$link = $file.$querystring_start.'cat'.$querystring_equal.$cat_ID;
+	} else {
+		if ('' == $category_nicename) $category_nicename = $wpdb->get_var("SELECT category_nicename FROM $tablecategories WHERE cat_ID = $category_id");
+		// Get any static stuff from the front
+		$front = substr($permalink_structure, 0, strpos($permalink_structure, '%'));
+		$link = $siteurl . $front . 'category/' . $category_nicename;
+	}
+
+	if ($echo) echo $link;
+	return $link;
+}
+
+function the_category($seperator = '') {
+	$categories = get_the_category();
+	if ('' == $seperator) {
+		echo '<ul class="post-categories">';
+		foreach ($categories as $category) {
+			$category->cat_name = stripslashes($category->cat_name);
+			echo "\n\t<li><a href='" . get_category_link(0, $category->category_id, $category->category_nicename) . "' title='View all posts in $category->cat_name'>$category->cat_name</a></li>";
+		}
+		echo '</ul>';
+	} else {
+		$i = 0;
+		foreach ($categories as $category) {
+			$category->cat_name = stripslashes($category->cat_name);
+			if (0 < $i) echo $seperator . ' ';
+			echo "<a href='" . get_category_link(0, $category->category_id, $category->category_nicename) . "' title='View all posts in $category->cat_name'>$category->cat_name</a>";
+			++$i;
+		}
+	}
+}
+
+function the_category_rss($type = 'rss') {
+	$categories = get_the_category();
+	foreach ($categories as $category) {
+		$category->cat_name = stripslashes(convert_chars($category->cat_name));
+		if ('rdf' == $type) {
+			echo "\n<dc:subject>$category->cat_name</dc:subject>";
+		} else {
+			echo "\n<category>$category->cat_name</category>";
+		}
+	}
+
+}
+function the_category_unicode() {
+	$category = get_the_category();
+	$category = apply_filters('the_category_unicode', $category);
+	echo convert_chars($category, 'unicode');
+}
+
+
+
+function get_the_category_by_ID($cat_ID) {
+	global $tablecategories, $cache_categories, $use_cache, $wpdb;
+	if ((!$cache_categories[$cat_ID]) OR (!$use_cache)) {
+		$cat_name = $wpdb->get_var("SELECT cat_name FROM $tablecategories WHERE cat_ID = '$cat_ID'");
+		$cache_categories[$cat_ID] = $cat_name;
+	} else {
+		$cat_name = $cache_categories[$cat_ID];
+	}
+	return(stripslashes($cat_name));
+}
+
+function the_category_ID($echo=true) {
+	global $post;
+    if ($echo)
+        echo $post->post_category;
+    else
+        return $post->post_category;
+}
+
+function the_category_head($before='', $after='') {
+	global $post, $currentcat, $previouscat, $dateformat, $newday;
+	$currentcat = $post->post_category;
+	if ($currentcat != $previouscat) {
+		echo $before;
+		echo get_the_category_by_ID($currentcat);
+		echo $after;
+		$previouscat = $currentcat;
+	}
+}
+
+function category_description($category = 0) {
+	global $cat, $wpdb, $tablecategories;
+	if (!$category) $category = $cat;
+	$category_description = $wpdb->get_var("SELECT category_description FROM $tablecategories WHERE cat_ID = $category");
+	$category_description = apply_filters('category_description', $category_description);
+	return $category_description;
+}
+
 
 
 ?>
