@@ -35,4 +35,22 @@ require_once("wp-blog-header.php");
 <!-- // this is just the end of the motor - don't touch that line either :) -->
 <?php } ?> 
 
+<!-- // this is just the end of the motor - don't touch that line either :) -->
+<?php } ?> 
+
+<div align="right"><cite>Powered by <a href="http://wordpress.org"><strong>Wordpress</strong></a></cite><br />
+<br />
+<a href="wp-login.php">login</a><br />
+<a href="wp-register.php">register</a></div>
+
+<?php
+$debug = "1";
+if ($debug == "1") {
+	echo "<p>$wpdb->querycount queries - ".number_format(timer_stop(),3)." seconds</p>";
+}
+?>
+
+</body>
+</html>
+
 ?>
