@@ -1432,6 +1432,109 @@ function category_description($category = 0) {
 	return $category_description;
 }
 
+// out of the b2 loop
+function dropdown_cats($optionall = 1, $all = 'All', $sort_column = 'ID', $sort_order = 'asc',
+                       $optiondates = 0, $optioncount = 0, $hide_empty = 1) {
+    global $cat, $tablecategories, $tableposts, $wpdb;
+    $sort_column = 'cat_'.$sort_column;
+
+    $query  = " SELECT cat_ID, cat_name,";
+    $query .= "  COUNT($tableposts.ID) AS cat_count,";
+    $query .= "  DAYOFMONTH(MAX(post_date)) AS lastday, MONTH(MAX(post_date)) AS lastmonth";
+    $query .= " FROM $tablecategories LEFT JOIN $tableposts ON cat_ID = post_category";
+    $query .= " WHERE cat_ID > 0 ";
+    $query .= " GROUP BY post_category ";
+    if (intval($hide_empty) == 1) {
+        $query .= " HAVING cat_count > 0";
+    }
+    $query .= " ORDER BY $sort_column $sort_order, post_date DESC";
+
+	$categories = $wpdb->get_results($query);
+	echo "<select name='cat' class='postform'>\n";
+	if (intval($optionall) == 1) {
+		$all = apply_filters('list_cats', $all);
+		echo "\t<option value='all'>$all</option>\n";
+	}
+	if ($categories) {
+		foreach ($categories as $category) {
+			$cat_name = apply_filters('list_cats', $category->cat_name);
+			echo "\t<option value=\"".$category->cat_ID."\"";
+			if ($category->cat_ID == $cat)
+				echo ' selected="selected"';
+			echo '>'.stripslashes($cat_name);
+	        if (intval($optioncount) == 1) {
+	            echo '&nbsp;&nbsp;('.$category->cat_count.')';
+	        }
+	        if (intval($optiondates) == 1) {
+	            echo '&nbsp;&nbsp;'.$category->lastday.'/'.$category->lastmonth;
+	        }
+	        echo "</option>\n";
+		}
+	}
+	echo "</select>\n";
+}
+
+// out of the b2 loop
+function list_cats($optionall = 1, $all = 'All', $sort_column = 'ID', $sort_order = 'asc',
+                   $file = 'blah', $list = true, $optiondates = 0, $optioncount = 0, $hide_empty = 1) {
+	global $tablecategories, $tableposts, $tablepost2cat, $wpdb;
+	global $pagenow, $siteurl, $blogfilename;
+	global $querystring_start, $querystring_equal, $querystring_separator;
+    if (($file == 'blah') || ($file == '')) {
+        $file = "$siteurl/$blogfilename";
+    }
+	$sort_column = 'cat_'.$sort_column;
+
+    $query  = "
+		SELECT cat_ID, cat_name, category_nicename,
+		COUNT($tablepost2cat.post_id) AS cat_count,
+		DAYOFMONTH(MAX(post_date)) AS lastday, MONTH(MAX(post_date)) AS lastmonth
+		FROM $tablecategories LEFT JOIN $tablepost2cat ON (cat_ID = category_id)
+		LEFT JOIN $tableposts ON (ID = post_id)
+		WHERE cat_ID > 0 
+		GROUP BY category_id
+		";
+    if (intval($hide_empty) == 1) {
+        $query .= " HAVING cat_count > 0";
+    }
+    $query .= " ORDER BY $sort_column $sort_order, post_date DESC";
+
+	$categories = $wpdb->get_results($query);
+	if (!$categories) {
+		if ($list) {
+			$before = '<li>';
+			$after = '</li>';
+		}
+		echo $before . "No categories" . $after . "\n";
+		return;
+	}
+	if (intval($optionall) == 1) {
+		$all = apply_filters('list_cats', $all);
+        $link = "<a href=\"".$file.$querystring_start.'cat'.$querystring_equal.'all">'.$all."</a>";
+		if ($list) echo "\n\t<li>$link</li>";
+		else echo "\t$link<br />\n";
+	}
+
+	foreach ($categories as $category) {
+		$cat_name = apply_filters('list_cats', $category->cat_name);
+        $link = '<a href="'.get_category_link(0, $category->cat_ID, $category->category_nicename).'" title="View all posts filed under ' . $category->cat_name . '">';
+        $link .= stripslashes($cat_name).'</a>';
+        if (intval($optioncount) == 1) {
+            $link .= '&nbsp;&nbsp;('.$category->cat_count.')';
+        }
+        if (intval($optiondates) == 1) {
+            $link .= '&nbsp;&nbsp;'.$category->lastday.'/'.$category->lastmonth;
+        }
+		if ($list) {
+			echo "\t<li>$link</li>\n";
+		} else {
+			echo "\t$link<br />\n";
+		}
+	}
+}
+
+/***** // Category tags *****/
+
 
 
 ?>
