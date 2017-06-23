@@ -9,35 +9,35 @@ if (!$step) $step = 0;
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
-	<title>WordPress &rsaquo; Installation</title>
-	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-	<style media="screen" type="text/css">
+  <title>WordPress &rsaquo; Installation</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <style media="screen" type="text/css">
     <!--
-	body {
-		font-family: Georgia, "Times New Roman", Times, serif;
-		margin-left: 15%;
-		margin-right: 15%;
-	}
-	#logo {
-		margin: 0;
-		padding: 0;
-		background-image: url(http://wordpress.org/images/wordpress.gif);
-		background-repeat: no-repeat;
-		height: 60px;
-		border-bottom: 4px solid #333;
-	}
-	#logo a {
-		display: block;
-		height: 60px;
-	}
-	#logo a span {
-		display: none;
-	}
-	p, li {
-		line-height: 140%;
-	}
+  body {
+    font-family: Georgia, "Times New Roman", Times, serif;
+    margin-left: 15%;
+    margin-right: 15%;
+  }
+  #logo {
+    margin: 0;
+    padding: 0;
+    background-image: url(http://wordpress.org/images/wordpress.gif);
+    background-repeat: no-repeat;
+    height: 60px;
+    border-bottom: 4px solid #333;
+  }
+  #logo a {
+    display: block;
+    height: 60px;
+  }
+  #logo a span {
+    display: none;
+  }
+  p, li {
+    line-height: 140%;
+  }
     -->
-	</style>
+  </style>
 </head>
 <body>
 <h1 id="logo"><a href="http://wordpress.org"><span>WordPress</span></a></h1>
@@ -50,7 +50,7 @@ if ($installed) die('<p>You appear to already have WordPress installed. If you w
 $wpdb->show_errors();
 switch($step) {
 
-	case 0:
+  case 0:
 ?>
 <p>Welcome to WordPress. We&#8217;re now going to go through a few steps to get
   you up and running with the latest in personal publishing platforms. Before
@@ -60,9 +60,9 @@ switch($step) {
   <a href="../readme.html">readme</a>? If you&#8217;re all ready, <a href="install.php?step=1">let's
   go</a>! </p>
 <?php
-	break;
+  break;
 
-	case 1:
+  case 1:
 ?>
 <h1>Step 1</h1>
 <p>Okay first we&#8217;re going to set up the links database. This will allow you to host your own blogroll, complete with Weblogs.com updates.</p>
@@ -135,9 +135,9 @@ if (!$got_links) {
            " PRIMARY KEY (link_id)                              " .
            ") ";
     $result = mysql_query($sql) or print ("Can't create the table '$tablelinks' in the database.<br />" . $sql . "<br />" . mysql_error());
-	$links = mysql_query("INSERT INTO $tablelinks VALUES ('', 'http://wordpress.org/', 'WordPress', '', '', 1, '', 'Y', 1, 0, '0000-00-00 00:00:00', '', '');");
-	$links = mysql_query("INSERT INTO $tablelinks VALUES ('', 'http://photomatt.net/', 'Matt', '', '', 1, '', 'Y', 1, 0, '0000-00-00 00:00:00', '', '');");
-	$links = mysql_query("INSERT INTO $tablelinks VALUES ('', 'http://zed1.com/b2/', 'Mike', '', '', 1, '', 'Y', 1, 0, '0000-00-00 00:00:00', '', '');");
+  $links = mysql_query("INSERT INTO $tablelinks VALUES ('', 'http://wordpress.org/', 'WordPress', '', '', 1, '', 'Y', 1, 0, '0000-00-00 00:00:00', '', '');");
+  $links = mysql_query("INSERT INTO $tablelinks VALUES ('', 'http://photomatt.net/', 'Matt', '', '', 1, '', 'Y', 1, 0, '0000-00-00 00:00:00', '', '');");
+  $links = mysql_query("INSERT INTO $tablelinks VALUES ('', 'http://zed1.com/b2/', 'Mike', '', '', 1, '', 'Y', 1, 0, '0000-00-00 00:00:00', '', '');");
 
 
 
@@ -177,8 +177,8 @@ if ($got_row) {
 <p>Did you defeat the boss monster at the end? Great! You&#8217;re ready for <a href="install.php?step=2">Step
   2</a>.</p>
 <?php
-	break;
-	case 2:
+  break;
+  case 2:
 ?>
 <h1>Step 2</h1>
 <p>First we&#8217;re going to create the necessary blog tables in the database...</p>
@@ -668,8 +668,8 @@ $guessurl = str_replace('/wp-admin/install.php?step=2', '', 'http://' . $HTTP_HO
 </form>
 
 <?php
-	break;
-	case 3:
+  break;
+  case 3:
 ?>
 <h1>Step 3</h1>
 
@@ -735,7 +735,7 @@ upgrade_100();
 </p>
 <p>Were you expecting more steps? Sorry to disappoint. All done!</p>
 <?php
-	break;
+  break;
 }
 ?>
 </body>
