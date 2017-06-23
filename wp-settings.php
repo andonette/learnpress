@@ -38,5 +38,6 @@ require (ABSPATH . WPINC . '/template-functions.php');
 require (ABSPATH . WPINC . '/class-xmlrpc.php');
 require (ABSPATH . WPINC . '/class-xmlrpcs.php');
 require (ABSPATH . WPINC . '/links.php');
+require (ABSPATH . WPINC . '/kses.php');
 
 ?>
