@@ -19,4 +19,20 @@ require_once("wp-blog-header.php");
 <body>
 <h1 id="header"><a href="<?php echo $siteurl; ?>" title="<?php bloginfo('name'); ?>"><?php bloginfo('name'); ?></a></h1>
 
+<!-- // loop start -->
+<?php foreach ($posts as $post) { start_wp(); ?>
+<?php the_date("d.m.y","<h2>","</h2>"); ?>
+<h3 class="storytitle" id="post-<?php the_ID(); ?>"><a href="<?php echo get_permalink() ?>" rel="bookmark" title="Permanent Link: <?php the_title(); ?>"><?php the_title(); ?></a></h3>
+
+<?php the_content(); ?><?php link_pages("<br />Pages: ","<br />","number") ?>
+<p><em>posted by <strong><?php the_author() ?></strong> @ <a href="<?php permalink_link() ?>"><?php the_time() ?></a></em></p>
+<p>Filed under: <?php the_category() ?></p>
+<?php comments_popup_link("comments ?", "1 comment", "% comments") ?>
+
+<?php include ("wp-comments.php"); ?>
+
+
+<!-- // this is just the end of the motor - don't touch that line either :) -->
+<?php } ?> 
+
 ?>
