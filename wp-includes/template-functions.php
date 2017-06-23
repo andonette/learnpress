@@ -548,4 +548,24 @@ function get_day_link($year, $month, $day) {
 		return $siteurl.'/'.$blogfilename.$querystring_start.'m'.$querystring_equal.$year.zeroise($month, 2).zeroise($day, 2);
 	}
 }
+
+function edit_post_link($link = 'Edit This', $before = '', $after = '') {
+	global $user_level, $post, $siteurl;
+
+	get_currentuserinfo();
+
+	if ($user_level > 0) {
+		$authordata = get_userdata($post->post_author);
+		if ($user_level < $authordata->user_level) {
+			return;
+		}
+	} else {
+		return;
+	}
+
+	$location = "$siteurl/wp-admin/post.php?action=edit&post=$post->ID";
+	echo "$before <a href='$location'>$link</a> $after";
+}
+
+
 ?>
