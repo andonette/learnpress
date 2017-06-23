@@ -136,4 +136,46 @@ function wp_title($sep = '&raquo;', $display = true) {
 	}
 }
 
+function single_post_title($prefix = '', $display = true) {
+	global $p, $name, $wpdb, $tableposts;
+	if (intval($p) || '' != $name) {
+		if (!$p) {
+			$p = $wpdb->get_var("SELECT ID FROM $tableposts WHERE post_name = '$name'");
+		}
+		$post_data = get_postdata($p);
+		$title = $post_data['Title'];
+		$title = apply_filters('single_post_title', $title);
+		if ($display) {
+			echo $prefix.strip_tags(stripslashes($title));
+		} else {
+			return strip_tags(stripslashes($title));
+		}
+	}
+}
+
+function single_cat_title($prefix = '', $display = true ) {
+	global $cat;
+	if(!empty($cat) && !(strtoupper($cat) == 'ALL')) {
+		$my_cat_name = get_the_category_by_ID($cat);
+		if(!empty($my_cat_name)) {
+			if ($display)
+				echo $prefix.strip_tags(stripslashes($my_cat_name));
+			else
+				return strip_tags(stripslashes($my_cat_name));
+		}
+	}
+}
+
+function single_month_title($prefix = '', $display = true ) {
+	global $m, $month;
+	if(!empty($m)) {
+		$my_year = substr($m,0,4);
+		$my_month = $month[substr($m,4,2)];
+		if ($display)
+			echo $prefix.$my_month.$prefix.$my_year;
+		else
+			return $m;
+	}
+}
+
 ?>
