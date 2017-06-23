@@ -529,4 +529,23 @@ function get_month_link($year, $month) {
 	}
 }
 
+function get_day_link($year, $month, $day) {
+	global $siteurl, $blogfilename, $querystring_start, $querystring_equal;
+	if (!$year) $year = date('Y', time()+($time_difference * 3600));
+	if (!$month) $month = date('m', time()+($time_difference * 3600));
+	if (!$day) $day = date('j', time()+($time_difference * 3600));
+	if ('' != get_settings('permalink_structure')) {
+		$off = strpos(get_settings('permalink_structure'), '%day%');
+		$offset = $off + 6;
+		$daylink = substr(get_settings('permalink_structure'), 0, $offset);
+		if ('/' != substr($daylink, -1)) $daylink = substr($daylink, 0, -1);
+		$daylink = str_replace('%year%', $year, $daylink);
+		$daylink = str_replace('%monthnum%', intval($month), $daylink);
+		$daylink = str_replace('%day%', intval($day), $daylink);
+		$daylink = str_replace('%post_id%', '', $daylink);
+		return $siteurl . $daylink;
+	} else {
+		return $siteurl.'/'.$blogfilename.$querystring_start.'m'.$querystring_equal.$year.zeroise($month, 2).zeroise($day, 2);
+	}
+}
 ?>
