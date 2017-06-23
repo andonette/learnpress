@@ -191,4 +191,107 @@ function get_archives_link($url, $text, $format = "html", $before = "", $after =
 	}
 }
 
+function get_archives($type='', $limit='', $format='html', $before = "", $after = "", $show_post_count = false) {
+	global $tableposts, $dateformat, $time_difference, $siteurl, $blogfilename;
+    global $querystring_start, $querystring_equal, $querystring_separator, $month, $wpdb, $start_of_week;
+
+    if ('' == $type) {
+        $type = get_settings('archive_mode');
+    }
+
+	if ('' != $limit) {
+        $limit = (int) $limit;
+		$limit = " LIMIT $limit";
+	}
+	// this is what will separate dates on weekly archive links
+	$archive_week_separator = '&#8211;';
+
+	// archive link url
+	$archive_link_m = $siteurl.'/'.$blogfilename.$querystring_start.'m'.$querystring_equal;	# monthly archive;
+	$archive_link_w = $siteurl.'/'.$blogfilename.$querystring_start.'w'.$querystring_equal;	# weekly archive;
+	$archive_link_p = $siteurl.'/'.$blogfilename.$querystring_start.'p'.$querystring_equal;	# post-by-post archive;
+
+    // over-ride general date format ? 0 = no: use the date format set in Options, 1 = yes: over-ride
+    $archive_date_format_over_ride = 0;
+
+    // options for daily archive (only if you over-ride the general date format)
+    $archive_day_date_format = 'Y/m/d';
+
+    // options for weekly archive (only if you over-ride the general date format)
+    $archive_week_start_date_format = 'Y/m/d';
+    $archive_week_end_date_format   = 'Y/m/d';
+
+    if (!$archive_date_format_over_ride) {
+        $archive_day_date_format = $dateformat;
+        $archive_week_start_date_format = $dateformat;
+        $archive_week_end_date_format   = $dateformat;
+    }
+
+	$now = date('Y-m-d H:i:s',(time() + ($time_difference * 3600)));
+
+	if ('monthly' == $type) {
+		$arcresults = $wpdb->get_results("SELECT DISTINCT YEAR(post_date) AS `year`, MONTH(post_date) AS `month`, count(ID) as posts FROM $tableposts WHERE post_date < '$now' AND post_status = 'publish' GROUP BY YEAR(post_date), MONTH(post_date) ORDER BY post_date DESC" . $limit);
+        if ($arcresults) {
+            foreach ($arcresults as $arcresult) {
+                $url  = get_month_link($arcresult->year,   $arcresult->month);
+                if ($show_post_count) {
+                    $text = sprintf("%s %d", $month[zeroise($arcresult->month,2)], $arcresult->year);
+                    $after = " ($arcresult->posts)";
+                } else {
+                    $text = sprintf("%s %d", $month[zeroise($arcresult->month,2)], $arcresult->year);
+                }
+                echo get_archives_link($url, $text, $format, $before, $after);
+            }
+        }
+	} elseif ('daily' == $type) {
+		$arcresults = $wpdb->get_results("SELECT DISTINCT YEAR(post_date) AS `year`, MONTH(post_date) AS `month`, DAYOFMONTH(post_date) AS `dayofmonth` FROM $tableposts WHERE post_date < '$now' AND post_status = 'publish' ORDER BY post_date DESC" . $limit);
+        if ($arcresults) {
+            foreach ($arcresults as $arcresult) {
+                $url  = get_day_link($arcresult->year, $arcresult->month, $arcresult->dayofmonth);
+                $date = sprintf("%d-%02d-%02d 00:00:00", $arcresult->year, $arcresult->month, $arcresult->dayofmonth);
+                $text = mysql2date($archive_day_date_format, $date);
+                echo get_archives_link($url, $text, $format, $before, $after);
+            }
+        }
+	} elseif ('weekly' == $type) {
+		if (!isset($start_of_week)) {
+			$start_of_week = 1;
+		}
+		$arcresults = $wpdb->get_results("SELECT DISTINCT WEEK(post_date, $start_of_week) AS `week`, YEAR(post_date) AS yr, DATE_FORMAT(post_date, '%Y-%m-%d') AS yyyymmdd FROM $tableposts WHERE post_date < '$now' AND post_status = 'publish' ORDER BY post_date DESC" . $limit);
+		$arc_w_last = '';
+        if ($arcresults) {
+            foreach ($arcresults as $arcresult) {
+                if ($arcresult->week != $arc_w_last) {
+                    $arc_year = $arcresult->yr;
+                    $arc_w_last = $arcresult->week;
+                    $arc_week = get_weekstartend($arcresult->yyyymmdd, $start_of_week);
+                    $arc_week_start = date_i18n($archive_week_start_date_format, $arc_week['start']);
+                    $arc_week_end = date_i18n($archive_week_end_date_format, $arc_week['end']);
+                    $url  = sprintf("%s/%s%sm%s%s%sw%s%d", $siteurl, $blogfilename, $querystring_start,
+                                    $querystring_equal, $arc_year, $querystring_separator,
+                                    $querystring_equal, $arcresult->week);
+                    $text = $arc_week_start . $archive_week_separator . $arc_week_end;
+                    echo get_archives_link($url, $text, $format, $before, $after);
+                }
+            }
+        }
+	} elseif ('postbypost' == $type) {
+		$arcresults = $wpdb->get_results("SELECT ID, post_date, post_title FROM $tableposts WHERE post_date < '$now' AND post_status = 'publish' ORDER BY post_date DESC" . $limit);
+        if ($arcresults) {
+            foreach ($arcresults as $arcresult) {
+                if ($arcresult->post_date != '0000-00-00 00:00:00') {
+                    $url  = get_permalink($arcresult->ID);
+                    $arc_title = stripslashes($arcresult->post_title);
+                    if ($arc_title) {
+                        $text = strip_tags($arc_title);
+                    } else {
+                        $text = $arcresult->ID;
+                    }
+                    echo get_archives_link($url, $text, $format, $before, $after);
+                }
+            }
+        }
+	}
+}
+
 ?>
