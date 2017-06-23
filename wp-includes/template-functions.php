@@ -1790,5 +1790,38 @@ function permalink_comments_rss() {
 
 /***** // Comment tags *****/
 
+/***** TrackBack tags *****/
+
+function trackback_url($display = true) {
+	global $siteurl, $id;
+	$tb_url = $siteurl.'/wp-trackback.php/'.$id;
+	if ($display) {
+		echo $tb_url;
+	} else {
+		return $tb_url;
+	}
+}
+
+
+function trackback_rdf($timezone = 0) {
+	global $siteurl, $id, $HTTP_SERVER_VARS;
+	if (!stristr($HTTP_SERVER_VARS['HTTP_USER_AGENT'], 'W3C_Validator')) {
+		echo '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" '."\n";
+		echo '    xmlns:dc="http://purl.org/dc/elements/1.1/"'."\n";
+		echo '    xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/">'."\n";
+		echo '<rdf:Description'."\n";
+		echo '    rdf:about="';
+		permalink_single();
+		echo '"'."\n";
+		echo '    dc:identifier="';
+		permalink_single();
+		echo '"'."\n";
+		echo '    dc:title="'.str_replace('--', '&#x2d;&#x2d;', addslashes(strip_tags(get_the_title()))).'"'."\n";
+		echo '    trackback:ping="'.trackback_url(0).'"'." />\n";
+		echo '</rdf:RDF>';
+	}
+}
+
+/***** // TrackBack tags *****/
 
 ?>
