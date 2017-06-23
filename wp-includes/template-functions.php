@@ -585,5 +585,71 @@ function edit_comment_link($link = 'Edit This', $before = '', $after = '') {
 	echo "$before <a href='$location'>$link</a> $after";
 }
 
+/***** Date/Time tags *****/
+
+function the_date_xml() {
+    global $post;
+    echo mysql2date("Y-m-d",$post->post_date);
+    //echo ""+$post->post_date;
+}
+
+function the_date($d='', $before='', $after='', $echo = true) {
+	global $id, $post, $day, $previousday, $dateformat, $newday;
+	$the_date = '';
+	if ($day != $previousday) {
+		$the_date .= $before;
+		if ($d=='') {
+			$the_date .= mysql2date($dateformat, $post->post_date);
+		} else {
+			$the_date .= mysql2date($d, $post->post_date);
+		}
+		$the_date .= $after;
+		$previousday = $day;
+	}
+	$the_date = apply_filters('the_date', $the_date);
+	if ($echo) {
+		echo $the_date;
+	} else {
+		return $the_date;
+	}
+}
+
+function the_time($d='', $echo = true) {
+	global $id, $post, $timeformat;
+	if ($d=='') {
+		$the_time = mysql2date($timeformat, $post->post_date);
+	} else {
+		$the_time = mysql2date($d, $post->post_date);
+	}
+	$the_time = apply_filters('the_time', $the_time);
+	if ($echo) {
+		echo $the_time;
+	} else {
+		return $the_time;
+	}
+}
+
+function the_weekday() {
+	global $weekday, $id, $post;
+	$the_weekday = $weekday[mysql2date('w', $post->post_date)];
+	$the_weekday = apply_filters('the_weekday', $the_weekday);
+	echo $the_weekday;
+}
+
+function the_weekday_date($before='',$after='') {
+	global $weekday, $id, $post, $day, $previousweekday;
+	$the_weekday_date = '';
+	if ($day != $previousweekday) {
+		$the_weekday_date .= $before;
+		$the_weekday_date .= $weekday[mysql2date('w', $post->post_date)];
+		$the_weekday_date .= $after;
+		$previousweekday = $day;
+	}
+	$the_weekday_date = apply_filters('the_weekday_date', $the_weekday_date);
+	echo $the_weekday_date;
+}
+
+/***** // Date/Time tags *****/
+
 
 ?>
