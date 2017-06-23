@@ -1824,4 +1824,47 @@ function trackback_rdf($timezone = 0) {
 
 /***** // TrackBack tags *****/
 
+
+/***** Permalink tags *****/
+function permalink_anchor($mode = 'id') {
+	global $id, $post;
+	switch(strtolower($mode)) {
+		case 'title':
+			$title = sanitize_title($post->post_title) . '-' . $id;
+			echo '<a id="'.$title.'"></a>';
+			break;
+		case 'id':
+		default:
+			echo '<a id="post-'.$id.'"></a>';
+			break;
+	}
+}
+
+function permalink_link($file='', $mode = 'id') {
+	global $post, $pagenow, $cacheweekly, $wpdb;
+	$file = ($file=='') ? $pagenow : $file;
+	switch(strtolower($mode)) {
+		case 'title':
+			$title = sanitize_title($post->post_title) . '-' . $post->ID;
+			$anchor = $title;
+			break;
+		case 'id':
+		default:
+			$anchor = $id;
+			break;
+	}
+	echo get_permalink();
+}
+
+function permalink_single($file = '') {
+	echo get_permalink();
+}
+
+function permalink_single_rss($file = '') {
+	global $siteurl;
+	echo get_permalink();
+}
+
+/***** // Permalink tags *****/
+
 ?>
