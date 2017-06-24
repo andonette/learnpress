@@ -1,5 +1,4 @@
-<?php 
-
+<?php /* Don't remove this line, it calls the WP function files ! */
 $blog=1;
 require_once("wp-blog-header.php");
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -15,7 +14,6 @@ require_once("wp-blog-header.php");
   <link rel="alternate" type="text/xml" title="RSS" href="<?php bloginfo('rss2_url'); ?>" />
   <link rel="pingback" href="<?php bloginfo('pingback_url'); ?>" />
 </head>
-
 <body>
 <h1 id="header"><a href="<?php echo $siteurl; ?>" title="<?php bloginfo('name'); ?>"><?php bloginfo('name'); ?></a></h1>
 
@@ -35,9 +33,6 @@ require_once("wp-blog-header.php");
 <!-- // this is just the end of the motor - don't touch that line either :) -->
 <?php } ?> 
 
-<!-- // this is just the end of the motor - don't touch that line either :) -->
-<?php } ?> 
-
 <div align="right"><cite>Powered by <a href="http://wordpress.org"><strong>Wordpress</strong></a></cite><br />
 <br />
 <a href="wp-login.php">login</a><br />
@@ -52,5 +47,3 @@ if ($debug == "1") {
 
 </body>
 </html>
-
-?>

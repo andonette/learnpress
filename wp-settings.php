@@ -20,7 +20,6 @@ $tableoptiontypes         = $table_prefix . 'optiontypes';
 $tableoptionvalues        = $table_prefix . 'optionvalues';
 $tableoptiongroups        = $table_prefix . 'optiongroups';
 $tableoptiongroup_options = $table_prefix . 'optiongroup_options';
-
 define('WPINC', 'wp-includes');
 require (ABSPATH . WPINC . '/wp-db.php');
 
@@ -111,5 +110,4 @@ if (!strstr($HTTP_SERVER_VARS['REQUEST_URI'], 'install.php')) {
 
 
 require (ABSPATH . WPINC . '/vars.php');
-
 ?>
