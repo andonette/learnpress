@@ -1,7 +1,9 @@
 <?php 
 /* Don't remove these lines. */
 $blog = 1;
-require_once('wp-blog-header.php');
+require('wp-blog-header.php');
+// Uncomment the next line if you want to track blog updates from weblogs.com
+//include_once(ABSPATH.WPINC.'/links-update-xml.php');
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -68,12 +70,12 @@ require_once('wp-blog-header.php');
 
 <ul>
 	<?php get_links_list(); ?>
- <li>Categories:
+ <li id="categories">Categories:
 	<ul>
 	<?php list_cats(0, 'All', 'name'); ?>
 	</ul>
  </li>
- <li>Search:
+ <li id="search">Search:
 	<form id="searchform" method="get" action="<?php echo $PHP_SELF; /*$siteurl."/".$blogfilename*/ ?>">
 	<div>
 		<input type="text" name="s" size="15" /><br />
@@ -81,21 +83,21 @@ require_once('wp-blog-header.php');
 	</div>
 	</form>
  </li>
- <li>Archives:
+ <li id="archives">Archives:
  	<ul>
 	 <?php get_archives('monthly'); ?>
  	</ul>
  </li>
- <li>
+ <li id="calendar">
 	<?php get_calendar(); ?>
  </li>
- <li>Other:
+ <li id="other">Other:
 	<ul>
 		<li><a href="<?php echo $siteurl; ?>/wp-login.php">login</a></li>
 		<li><a href="<?php echo $siteurl; ?>/wp-register.php">register</a></li>
 	</ul>
  </li>
- <li>Meta:
+ <li id="meta">Meta:
  	<ul>
 		<li><a href="<?php bloginfo('rss2_url'); ?>" title="Syndicate this site using RSS"><abbr title="Really Simple Syndication">RSS</abbr> 2.0</a></li>
 		<li><a href="<?php bloginfo('comments_rss2_url'); ?>" title="The latest comments to all posts in RSS">Comments <abbr title="Really Simple Syndication">RSS</abbr> 2.0</a></li>
