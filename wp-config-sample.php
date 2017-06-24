@@ -3,9 +3,9 @@
 /** http://wordpress.org/   **/
 
 // ** MySQL settings ** //
-define('DB_NAME', 'learnpress');     // The name of the database
-define('DB_USER', 'root');     // Your MySQL username
-define('DB_PASSWORD', 'root'); // ...and password
+define('DB_NAME', 'wordpress');     // The name of the database
+define('DB_USER', 'username');     // Your MySQL username
+define('DB_PASSWORD', 'password'); // ...and password
 define('DB_HOST', 'localhost');     // 99% chance you won't need to change this value
 
 // Change the prefix if you want to have multiple blogs in a single database.
