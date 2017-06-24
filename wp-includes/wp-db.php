@@ -26,7 +26,8 @@
 		// ==================================================================
 		//	DB Constructor - connects to the server and selects a database
 
-		function wpdb($dbuser, $dbpassword, $dbname, $dbhost) {
+		function wpdb($dbuser, $dbpassword, $dbname, $dbhost)
+		{
 
 			$this->dbh = @mysql_connect($dbhost,$dbuser,$dbpassword);
 
@@ -307,7 +308,6 @@
 
 		}
 
-
 		// ==================================================================
 		//	Function to get 1 column from the cached result set based in X index
 		// se docs for usage and info
@@ -377,6 +377,7 @@
 			}
 		}
 
+
 		// ==================================================================
 		// Function to get column meta data info pertaining to the last query
 		// see docs for more info and usage
@@ -405,7 +406,8 @@
 
 		}
 
-	} 
+	}
 
-	$wpdb = new wpdb(DB_USER, DB_PASSWORD, DB_NAME, DB_HOST);
+$wpdb = new wpdb(DB_USER, DB_PASSWORD, DB_NAME, DB_HOST);
+
 ?>

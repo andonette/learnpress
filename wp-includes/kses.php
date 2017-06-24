@@ -12,17 +12,17 @@
 
 $allowedtags = array('b' => array(),
                  'i' => array(),
-                 'strong' => array(),
-                 'code' => array(),
-                 'acronym' => array('title'),
-                 'abbr' => array('title'),
-                 'em' => array(),
-                 'strike' => array(),
+				 'strong' => array(),
+				 'code' => array(),
+				 'acronym' => array('title'),
+				 'abbr' => array('title'),
+				 'em' => array(),
+				 'strike' => array(),
                  'a' => array('href'  => array('minlen' => 6, 'maxlen' => 250),
                               'title',
-                              'rel' => array('minlen' => 3, 'maxlen' => 250)),
-                'blockquote' => array('cite' => array()),
-                'del' => array('datetime'),
+							  'rel' => array('minlen' => 3, 'maxlen' => 250)),
+				'blockquote' => array('cite' => array()),
+				'del' => array('datetime'),
                  'br' => array());
 
 function wp_kses($string, $allowed_html, $allowed_protocols =
@@ -540,8 +540,8 @@ function wp_kses_decode_entities($string)
 } # function wp_kses_decode_entities
 
 function wp_filter_kses($data) {
-    global $allowedtags;
-    return wp_kses($data, $allowedtags);
+	global $allowedtags;
+	return wp_kses($data, $allowedtags);
 }
 
 // Filter untrusted content
