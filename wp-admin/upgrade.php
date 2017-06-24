@@ -1,10 +1,11 @@
 <?php
 $_wp_installing = 1;
-if (!file_exists('../wp-config.php')) die("There doesn't seem to be a wp-config.php file. Double check that you updated wp-config.sample.php with the proper database connection information and renamed it to wp-config.php.");
+if (!file_exists('../wp-config.php')) die("There doesn't seem to be a wp-config.php file. Double check that you updated wp-config-sample.php with the proper database connection information and renamed it to wp-config.php.");
 require('../wp-config.php');
+timer_start();
 require('upgrade-functions.php');
 
-$step = $HTTP_GET_VARS['step'];
+$step = $_GET['step'];
 if (!$step) $step = 0;
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -13,6 +14,8 @@ if (!$step) $step = 0;
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 <style media="screen" type="text/css">
 	body {
+		background-color: white;
+		color: black;
 		font-family: Georgia, "Times New Roman", Times, serif;
 		margin-left: 15%;
 		margin-right: 15%;
@@ -52,6 +55,15 @@ switch($step) {
 ?> 
 <h2>Step 1</h2> 
 <p>There's actually only one step. So if you see this, you're done. <a href="../">Have fun</a>! </p>
+
+<!--
+<pre>
+<?php echo $wpdb->num_queries; ?> queries
+
+<?php timer_stop(1); ?> seconds
+</pre>
+-->
+
 <?php
 	break;
 }
