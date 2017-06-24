@@ -26,8 +26,8 @@ window.close()
 
 } else {
 
-    $popuptitle = stripslashes($popuptitle);
-    $text = stripslashes($text);
+    $popuptitle = wp_specialchars(stripslashes($popuptitle));
+    $text = wp_specialchars(stripslashes($text));
     
     /* big funky fixes for browsers' javascript bugs */
     
@@ -46,23 +46,23 @@ window.close()
         $text = preg_replace($wp_gecko_correction["in"],$wp_gecko_correction["out"],$text);
     }
     
-    $post_title = $_REQUEST['post_title'];
+    $post_title = wp_specialchars($_REQUEST['post_title']);
     if (!empty($post_title)) {
-        $post_title =  stripslashes($post_title);
+        $post_title =  wp_specialchars(stripslashes($post_title));
     } else {
-        $post_title = $popuptitle;
+        $post_title = wp_specialchars($popuptitle);
     }
 // I'm not sure why we're using $edited_post_title in the edit-form.php, but we are
 // and that is what is being included below. For this reason, I am just duplicating
 // the var instead of changing the assignment on the lines above. 
 // -- Alex King 2004-01-07
-    $edited_post_title = $post_title;
+    $edited_post_title = wp_specialchars($post_title);
     
-    $content = $_REQUEST['content'];
+    $content = wp_specialchars($_REQUEST['content']);
     if (!empty($content)) {
         $content =  stripslashes($content);
     } else {
-        $content = '<a href="'.$popupurl.'">'.$popuptitle.'</a>'."\n$text";
+        $content = '<a href="'.wp_specialchars($popupurl).'">'.wp_specialchars($popuptitle).'</a>'."\n$text";
     }
     
     /* /big funky fixes */

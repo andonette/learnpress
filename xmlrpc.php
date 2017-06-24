@@ -977,8 +977,8 @@ function bloggergetpost($m) {
 		$postdata = get_postdata($post_ID);
 
 		if ($postdata["Date"] != "") {
-			$post_date = mysql2date("Ymd\TH:i:s", $postdata['Date']);
-
+		// patch by Adriaan Tijsseling (http://kung-foo.tv) to properly sent back UTC
+			$post_date = mysql2date("Ymd\TH:i:s", $postdata['Date'], 1, 1);
 			$content  = "<title>".stripslashes($postdata["Title"])."</title>";
 			$content .= "<category>".$postdata["Category"]."</category>";
 			$content .= stripslashes($postdata["Content"]);
@@ -1054,8 +1054,8 @@ function bloggergetrecentposts($m) {
 				"Category" => $row->post_category
 			);
 
-			$post_date = mysql2date("Ymd\TH:i:s", $postdata['Date']);
-
+		// patch by Adriaan Tijsseling (http://kung-foo.tv) to properly sent back UTC
+			$post_date = mysql2date("Ymd\TH:i:s", $postdata['Date'], 1, 1);
 			$content  = "<title>".stripslashes($postdata["Title"])."</title>";
 			$content .= "<category>".get_cat_name($postdata["Category"])."</category>";
 			$content .= stripslashes($postdata["Content"]);
@@ -1297,10 +1297,13 @@ function mwnewpost($params) {
 		}
 		
 		// Do some timestamp voodoo
+	// Patched by Adriaan Tijsseling (http://kung-foo.tv) to properly deal with UTC date strings -->
 		$dateCreated = $contentstruct['dateCreated'];
-		$dateCreated = $dateCreated ? iso8601_decode($dateCreated) : current_time('timestamp',1);
+		$utc = $dateCreated[strlen($dateCreated)-1] == 'Z';
+		$dateCreated = $dateCreated ? iso8601_decode($dateCreated,$utc) : current_time('timestamp',1);
 		$post_date = gmdate('Y-m-d H:i:s', $dateCreated + get_settings('gmt_offset') * 3600);
 		$post_date_gmt = get_gmt_from_date(date('Y-m-d H:i:s', $dateCreated));
+	// <-- end patch
 		
 		$catnames = $contentstruct['categories'];
 logio("O","Post cats: " . print_r($catnames));
@@ -1310,7 +1313,7 @@ logio("O","Post cats: " . print_r($catnames));
 				$post_category[] = get_cat_ID($cat);
 			}
 		} else {
-			$post_category[] = 1;
+			$post_category = 0;
 		}
 		
 		// We've got all the data -- post it:
@@ -1408,11 +1411,13 @@ function mweditpost ($params) {	// ($postid, $user, $pass, $content, $publish)
 		$ping_status = $contentstruct['mt_allow_pings']?'open':'closed';
 
 		// Do some timestamp voodoo
+	// Patched by Adriaan Tijsseling (http://kung-foo.tv) to properly deal with UTC date strings -->
 		$dateCreated = $contentstruct['dateCreated'];
-		$dateCreated = $dateCreated ? iso8601_decode($dateCreated) : current_time('timestamp',1);
-		$post_date = date('Y-m-d H:i:s', $dateCreated);
-		$post_date_gmt = get_gmt_from_date($post_date);
-
+		$utc = $dateCreated[strlen($dateCreated)-1] == 'Z';
+		$dateCreated = $dateCreated ? iso8601_decode($dateCreated,$utc) : current_time('timestamp',1);
+        $post_date = gmdate('Y-m-d H:i:s', $dateCreated + get_settings('gmt_offset') * 3600);
+        $post_date_gmt = get_gmt_from_date(date('Y-m-d H:i:s', $dateCreated));
+	// <-- end patch
 
 		// We've got all the data -- post it:
 		$newpost = compact('ID','post_content','post_title','post_category','post_status','post_excerpt','comment_status','ping_status','post_date','post_date_gmt');
@@ -1429,10 +1434,10 @@ function mweditpost ($params) {	// ($postid, $user, $pass, $content, $publish)
 			sleep($sleep_after_edit);
 		}
 
-		pingback($content, $post_ID);
-		trackback_url_list($content_struct['mt_tb_ping_urls'],$post_ID);
+		pingback($content, $ID);
+		trackback_url_list(implode(",", $contentstruct['mt_tb_ping_urls']),$ID);
 
-		logIO("O","(MW) Edited ! ID: $post_ID");
+		logIO("O","(MW) Edited ! ID: $ID");
 		$myResp = new xmlrpcval(true,"boolean");
 
 		return new xmlrpcresp($myResp);
@@ -1464,8 +1469,8 @@ function mwgetpost ($params) {	// ($postid, $user, $pass)
 
 		if ($postdata["Date"] != "") {
 
-			$post_date = mysql2date('Ymd\TH:i:s', $postdata['Date']);
-			
+		// patch by Adriaan Tijsseling (http://kung-foo.tv) to properly sent back UTC
+			$post_date = mysql2date('Ymd\TH:i:s', $postdata['Date'], 1, 1);
 			$catids = wp_get_post_cats($post_ID);
 			foreach($catids as $catid) {
 				$catname = get_cat_name($catid);
@@ -1476,20 +1481,31 @@ function mwgetpost ($params) {	// ($postid, $user, $pass)
 			$allow_comments = ('open' == $postdata['comment_status'])?1:0;
 			$allow_pings = ('open' == $postdata['ping_status'])?1:0;
 
+			// Retrun if Markdown is active or not. Useful for ecto.
+			// without this, ecto could apply "Convert linebreaks" sometimes.
+			$current_plugins = explode("\n", (get_settings('active_plugins')));
+			if (!empty($current_plugins) && in_array( "markdown.php", $current_plugins)) {
+				$mt_convert_breaks = 'markdown';
+			} else {
+				$mt_convert_breaks = '__default__';
+			}
+
 			$resp = array(
-				'link' => new xmlrpcval(post_permalink($post_ID)),
+				'link' => new xmlrpcval(get_permalink($post_ID)),
 				'title' => new xmlrpcval($postdata["Title"]),
 				'description' => new xmlrpcval($post['main']),
 				'dateCreated' => new xmlrpcval($post_date,'dateTime.iso8601'),
 				'userid' => new xmlrpcval($postdata["Author_ID"]),
 				'postid' => new xmlrpcval($postdata["ID"]),
 				'content' => new xmlrpcval($postdata["Content"]),
-				'permalink' => new xmlrpcval(post_permalink($post_ID)),
-				'categories' => new xmlrpcval($catlist,'array'),
+				'permaLink' => new xmlrpcval(get_permalink($post_ID)),
+				// Disable this field. use 'mt.getPostCategories instead
+				//'categories' => new xmlrpcval($catlist,'array'), 
 				'mt_excerpt' => new xmlrpcval($postdata['Excerpt']),
 				'mt_allow_comments' => new xmlrpcval($allow_comments,'int'),
 				'mt_allow_pings' => new xmlrpcval($allow_pings,'int'),
-				'mt_text_more' => new xmlrpcval($post['extended'])
+				'mt_text_more' => new xmlrpcval($post['extended']),
+				'mt_convert_breaks' => new xmlrpcval($mt_convert_breaks)
 			);
 			
 			$resp = new xmlrpcval($resp,'struct');
@@ -1533,13 +1549,14 @@ function mwrecentposts ($params) {	// ($blogid, $user, $pass, $num)
 		// Encode each entry of the array.
 		foreach($postlist as $entry) {
 
-			$isoString = mysql2date('Ymd\TH:i:s', $entry['post_date']);
+		// patch by Adriaan Tijsseling (http://kung-foo.tv) to properly sent back UTC
+			$isoString = mysql2date('Ymd\TH:i:s', $entry['post_date'], 1, 1 );
 			$date = new xmlrpcval($isoString,"dateTime.iso8601");
 			$userid = new xmlrpcval($entry['post_author']);
 			$content = new xmlrpcval($entry['post_content']);
 			$excerpt = new xmlrpcval($entry['post_excerpt']);
 			
-			$pcat = stripslashes(get_cat_name($entry['post_category']));
+			// $pcat = stripslashes(get_cat_name($entry['post_category']));
 			
 			// For multiple cats, we might do something like
 			// this in the future:
@@ -1549,15 +1566,22 @@ function mwrecentposts ($params) {	// ($blogid, $user, $pass, $num)
 			//$catstruct['isPrimary'] = TRUE;
 			
 			//$catstruct2 = phpxmlrpc_encode($catstruct);
+
+			$catids = wp_get_post_cats('1', $entry['ID']);
+		
+			// This should return multiple categories correctly
+			foreach($catids as $catid) {	
+				$catarray[] = new xmlrpcval(get_cat_name($catid),'string');
+			}
 			
-			$categories = new xmlrpcval(array(new xmlrpcval($pcat)),'array');
+			$categories = new xmlrpcval($catarray,'array');
 
 			$post = get_extended($entry['post_content']);
 
 			$postid = new xmlrpcval($entry['ID']);
 			$title = new xmlrpcval(stripslashes($entry['post_title']));
 			$description = new xmlrpcval(stripslashes($post['main']));
-			$link = new xmlrpcval(post_permalink($entry['ID']));
+			$link = new xmlrpcval(get_permalink($entry['ID']));
 			$permalink = $link;
 
 			$extended = new xmlrpcval(stripslashes($post['extended']));
@@ -1573,7 +1597,7 @@ function mwrecentposts ($params) {	// ($blogid, $user, $pass, $num)
 				'title' => $title,
 				'description' => $description,
 				'link' => $link,
-				'permalink' => $permalink,
+				'permaLink' => $permalink,
 				'mt_excerpt' => $excerpt,
 				'mt_allow_comments' => $allow_comments,
 				'mt_allow_pings' => $allow_pings,
@@ -1624,13 +1648,118 @@ function mwgetcats ($params) {	// ($blogid, $user, $pass)
 
 
 $mwnewmedia_sig =  array(array($xmlrpcStruct,$xmlrpcString,$xmlrpcString,$xmlrpcString,$xmlrpcStruct));
-$mwnewmedia_doc = 'Upload image or other binary data, MetaWeblog API-style (unimplemented)';
+$mwnewmedia_doc = 'Upload image or other binary data, MetaWeblog API-style';
+
+/*  File Upload in WordPress XML-RPC 
+
+
+ metaWeblog.newMediaObject (blogid, username, password, struct)
+
+ The blogid, username and password params are as in the Blogger API. 
+
+ The struct must contain at least three elements, name, type and bits.
+
+ name is a string, it may be used to determine the name of the file 
+ that stores the object, or to display it in a list of objects. 
+ It determines how the weblog refers to the object. If the name is 
+ the same as an existing object stored in the weblog, it may replace 
+ the existing object.
+
+ type is a string, it indicates the type of the object, it's a standard 
+ MIME type, like audio/mpeg or image/jpeg or video/quicktime. 
+
+ bits is a base64-encoded binary value containing the content of the object.
+
+ The struct may contain other elements, which may or may not be stored by 
+ the content management system.
+
+ If newMediaObject fails, it throws an error. If it succeeds, it returns 
+ a struct, which must contain at least one element, url, which is the url 
+ through which the object can be accessed. It must be either an FTP or HTTP url.
+
+*/
 
 function mwnewmedia($params) {	// ($blogid, $user, $pass, $struct) 
 	global $xmlrpcerruser;
+
+	$xblogid = $params->getParam(0);
+	$xuser = $params->getParam(1);
+	$xpass = $params->getParam(2);
+	$xdata = $params->getParam(3);
 	
+	$blogid = $xblogid->scalarval();
+	$username = $xuser->scalarval();
+	$password = $xpass->scalarval();
+	$datastruct = phpxmlrpc_decode($xdata);
+
+	$name = $datastruct['name'];
+	$type = $datastruct['type'];
+	$bits = $datastruct['bits'];
+	
+	$file_realpath = get_settings('fileupload_realpath'); 
+	$file_url = get_settings('fileupload_url');
+
+	$userdata = get_userdatabylogin($username);
+	$userlevel = $userdata->user_level;
+
+	if (user_pass_ok($username,$password)) {
+		if( !get_settings('use_fileupload')) {
+			// Uploads not allowed
+			logIO("O","(MW) Uploads not allowed");
+			return new xmlrpcresp(0, $xmlrpcerruser+3, // user error 3
+					   'No uploads allowed for this site');
+		} 
+		
+		if( get_settings('fileupload_minlevel') > $userlevel) {
+			// User has not enough privileges
+			logIO("O","(MW) Not enough privilege");
+			return new xmlrpcresp(0, $xmlrpcerruser+3, // user error 3
+					   $username.' is not allowed to upload files to this site');
+		}
+
+		if( $file_realpath == "" || $file_url == "" ) {
+			// WordPress is not correctly configured
+			logIO("O","(MW) Bad configuration. Real/URL path not defined");
+			return new xmlrpcresp(0, $xmlrpcerruser+3, // user error 3
+					   'Please configure WordPress with valid paths for file upload');
+		}
+		
+		$prefix = "/";
+		
+		if( !empty($name)) {
+			// Create the path
+			$localpath = $file_realpath.$prefix.$name;
+			$url = $file_url.$prefix.$name;
+
+			/* encode & write data (binary) */
+			$ifp = fopen( $localpath, "wb" );
+			$success = fwrite( $ifp, $bits );
+			fclose( $ifp );
+			chmod( $localpath, 0666 );
+
+			if( $success ) {
+				$resp = array(
+							'url' => new xmlrpcval( $url ),
+						);
+				
+				$resp = new xmlrpcval($resp,'struct');
+				return new xmlrpcresp($resp);
+			} else {
+				return new xmlrpcresp(0, $xmlrpcerruser+3, 
+	   			   			'Could not write file '.$name.' to '.$localpath );
+			}
+		}
+	
+	} else {
+		logIO("O","(MW) Wrong username/password combination <b>$username / $password</b>");
+		return new xmlrpcresp(0, $xmlrpcerruser+3, // user error 3
+	   'Wrong username/password combination '.$username.' / '.starify($password));
+	}
+
+	/*	
 	return new xmlrpcresp(0, $xmlrpcerruser+10, // user error 10
 	  'metaWeblog.newMediaObject not implemented (yet)');
+	*/
 }
 
 
@@ -1808,17 +1937,17 @@ function mt_getRecentPostTitles($params) {
 		
 		foreach($posts as $post) {
 
-			$post_date = mysql2date('Ymd\TH:i:s', $post['post_date']);
-
+		// patch by Adriaan Tijsseling (http://kung-foo.tv) to properly sent back UTC
+			$post_date = mysql2date('Ymd\TH:i:s', $post['post_date'], 1, 1);
 			$struct['dateCreated'] = new xmlrpcval($post_date, 'dateTime.iso8601');
 			$struct['userid'] = new xmlrpcval($post['post_author'], 'string');
 			$struct['postid'] = new xmlrpcval($post['ID'], 'string');
 			$struct['title'] = new xmlrpcval($post['post_title'], 'string');
 			
-			$result[] = $struct;
+			$result[] = new xmlrpcval($struct,'struct');
 		}
 		
-		return new xmlrpcresp(new xmlrpcval($results,'array'));
+		return new xmlrpcresp(new xmlrpcval($result,'array'));
 
 	} else {
 		return new xmlrpcresp(0, $xmlrpcerruser+3, // user error 3
@@ -1834,7 +1963,15 @@ function mt_supportedTextFilters($params) {
 	// This should probably check the status of the 'use_bbcode' 
 	// and 'use_gmcode' config options.
 	
-	return new xmlrpcresp(new xmlrpcval(array(),'array'));
+	// Archaic Markdown check
+	$current_plugins = explode("\n", (get_settings('active_plugins')));
+	if (!empty($current_plugins) && in_array( "markdown.php", $current_plugins)) {
+		$struct['label'] = 'Markdown';
+		$struct['key'] = 'markdown';
+	}
+	
+	$xmlstruct = phpxmlrpc_encode($struct);
+	return new xmlrpcresp(new xmlrpcval(array($xmlstruct),'array'));
 }
 
 

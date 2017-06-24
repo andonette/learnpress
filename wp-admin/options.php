@@ -112,6 +112,7 @@ $nonbools = array('default_ping_status', 'default_comment_status');
 	$referred = str_replace(array('&updated=true', '?updated=true') , '', $_SERVER['HTTP_REFERER']);
 	 if (strstr($referred, '?')) $goback = $referred . '&updated=true';
 	else $goback = str_replace('?updated=true', '', $_SERVER['HTTP_REFERER']) . '?updated=true';
+	$goback = preg_replace('|[^a-z0-9-~+_.?#=&;,/:]|i', '', $goback);
     header('Location: ' . $goback);
     break;
 

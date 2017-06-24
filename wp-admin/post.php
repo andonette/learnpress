@@ -142,6 +142,7 @@ case 'post':
 	}
 	if ( '' != $_POST['advanced'] || isset($_POST['save']) )
 		$location = "post.php?action=edit&post=$post_ID";
+	$location = preg_replace('|[^a-z0-9-~+_.?#=&;,/:]|i', '', $location);
 
 	header("Location: $location"); // Send user on their way while we keep working
 
@@ -337,6 +338,7 @@ case 'editpost':
 	} else {
 		$location = 'post.php';
 	}
+	$location = preg_replace('|[^a-z0-9-~+_.?#=&;,/:]|i', '', $location);
 	header ('Location: ' . $location); // Send user on their way while we keep working
 
 $now = current_time('mysql');
@@ -703,6 +705,7 @@ case 'editedcomment':
 		);
 
 	$referredby = $_POST['referredby'];
+	$referredby = preg_replace('|[^a-z0-9-~+_.?#=&;,/:]|i', '', $referredby);
 	if (!empty($referredby)) header('Location: ' . $referredby);
 	else header ("Location: edit.php?p=$comment_post_ID&c=1#comments");
 	do_action('edit_comment', $comment_ID);

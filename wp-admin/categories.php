@@ -46,7 +46,7 @@ case 'addcat':
     if ($user_level < 3)
         die (__('Cheatin&#8217; uh?'));
     
-    $cat_name= addslashes(stripslashes(stripslashes($_POST['cat_name'])));
+    $cat_name= wp_specialchars(addslashes(stripslashes(stripslashes($_POST['cat_name']))));
     $category_nicename = sanitize_title($cat_name);
     $category_description = addslashes(stripslashes(stripslashes($_POST['category_description'])));
     $cat = intval($_POST['cat']);
@@ -66,7 +66,7 @@ case 'Delete':
 
     $cat_ID = intval($_GET["cat_ID"]);
     $cat_name = get_catname($cat_ID);
-    $cat_name = addslashes($cat_name);
+    $cat_name = wp_specialchars(addslashes($cat_name));
     $category = $wpdb->get_row("SELECT * FROM $tablecategories WHERE cat_ID = '$cat_ID'");
     $cat_parent = $category->category_parent;
 
@@ -89,16 +89,16 @@ case 'edit':
     require_once ('admin-header.php');
     $cat_ID = intval($_GET['cat_ID']);
     $category = $wpdb->get_row("SELECT * FROM $tablecategories WHERE cat_ID = '$cat_ID'");
-    $cat_name = stripslashes($category->cat_name);
+    $cat_name = wp_specialchars(stripslashes($category->cat_name));
     ?>
 
 <div class="wrap">
     <h2><?php _e('Edit Category') ?></h2>
     <form name="editcat" action="categories.php" method="post">
         <input type="hidden" name="action" value="editedcat" />
-        <input type="hidden" name="cat_ID" value="<?php echo $_GET['cat_ID'] ?>" />
+        <input type="hidden" name="cat_ID" value="<?php echo (int) $cat_ID ?>" />
         <p><?php _e('Category name:') ?><br />
-        <input type="text" name="cat_name" value="<?php echo $cat_name; ?>" /></p>
+        <input type="text" name="cat_name" value="<?php echo wp_specialchars($cat_name, 1); ?>" /></p>
         <p><?php _e('Category parent:') ?><br />
         <select name='cat' class='postform'>
         <option value='0'<?php if (!$category->category_parent) echo " selected='selected'"; ?>>None</option>

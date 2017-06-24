@@ -18,6 +18,8 @@ if (!get_magic_quotes_gpc()) {
 }
 
 $author = trim(strip_tags($_POST['author']));
+if ( preg_match('/&#[0-9]{3};/i', $author) )
+	die();
 
 $email = trim(strip_tags($_POST['email']));
 if (strlen($email) < 6)
@@ -29,11 +31,22 @@ if (strlen($url) < 7)
 	$url = '';
 
 $comment = trim($_POST['comment']);
+
+if ( preg_match('/&#[0-9]{3};/i', $comment) )
+	die();
+
 $comment_post_ID = intval($_POST['comment_post_ID']);
 $user_ip = $_SERVER['REMOTE_ADDR'];
 
-if ( 'closed' ==  $wpdb->get_var("SELECT comment_status FROM $tableposts WHERE ID = '$comment_post_ID'") )
+
+$post_status = $wpdb->get_var("SELECT comment_status FROM $tableposts WHERE ID = '$comment_post_ID'");
+
+if ( empty($post_status) ) {
+	// Post does not exist.  Someone is trolling.  Die silently.
+	die();
+} else if ( 'closed' ==  $post_status ) {
 	die( __('Sorry, comments are closed for this item.') );
+}
 
 if ( get_settings('require_name_email') && ('' == $email || '' == $author) )
 	die( __('Error: please fill the required fields (name, email).') );
@@ -94,7 +107,7 @@ header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
 header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
 header('Cache-Control: no-cache, must-revalidate');
 header('Pragma: no-cache');
-$location = (empty($_POST['redirect_to'])) ? $_SERVER["HTTP_REFERER"] : $_POST['redirect_to'];
+$location = get_permalink($comment_post_ID);
 if ($is_IIS) {
 	header("Refresh: 0;url=$location");
 } else {
