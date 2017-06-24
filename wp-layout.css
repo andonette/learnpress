@@ -278,3 +278,8 @@ p, li, .feedback {
 	font-style: normal;
 	text-transform: capitalize;
 }
+
+.storycontent img {
+	border: 1px solid #cccccc	 !important;
+	margin: 10px;
+}
