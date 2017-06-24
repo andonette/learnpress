@@ -7,7 +7,7 @@ require_once("wp-blog-header.php");
 <head>
   <title><?php bloginfo('name') ?><?php single_post_title(' :: ') ?><?php single_cat_title(' :: ') ?><?php single_month_title(' :: ') ?></title>
   <!-- Change charset if needed(?)  But please do not remove this metatag -->
-  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <meta http-equiv="Content-Type" content="text/html; charset=<?php echo get_settings('blog_charset'); ?>" />
   <meta name="generator" content="WordPress <?php $wp_version ?>" /> <!-- leave this for stats -->
   <meta http-equiv="reply-to" content="you@somewhere.zzz" />
   <link rel="alternate" type="text/xml" title="RDF" href="<?php bloginfo('rdf_url'); ?>" />
@@ -15,7 +15,7 @@ require_once("wp-blog-header.php");
   <link rel="pingback" href="<?php bloginfo('pingback_url'); ?>" />
 </head>
 <body>
-<h1 id="header"><a href="<?php echo $siteurl; ?>" title="<?php bloginfo('name'); ?>"><?php bloginfo('name'); ?></a></h1>
+<h1 id="header"><a href="<?php echo get_settings('home'); ?>" title="<?php bloginfo('name'); ?>"><?php bloginfo('name'); ?></a></h1>
 
 <!-- // loop start -->
 <?php foreach ($posts as $post) { start_wp(); ?>
@@ -23,7 +23,7 @@ require_once("wp-blog-header.php");
 <h3 class="storytitle" id="post-<?php the_ID(); ?>"><a href="<?php echo get_permalink() ?>" rel="bookmark" title="Permanent Link: <?php the_title(); ?>"><?php the_title(); ?></a></h3>
 
 <?php the_content(); ?><?php link_pages("<br />Pages: ","<br />","number") ?>
-<p><em>posted by <strong><?php the_author() ?></strong> @ <a href="<?php permalink_link() ?>"><?php the_time() ?></a></em></p>
+<p><em>posted by <strong><?php the_author() ?></strong> @ <a href="<?php the_permalink() ?>"><?php the_time() ?></a></em></p>
 <p>Filed under: <?php the_category() ?></p>
 <?php comments_popup_link("comments ?", "1 comment", "% comments") ?>
 
