@@ -1,3 +1,3 @@
 <?php
-//s:20:"history-of-wordpress";
+//s:7:"default";
 ?>
