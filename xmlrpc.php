@@ -1,7 +1,13 @@
 <?php
 
+define('XMLRPC_REQUEST', true);
+
+// Some browser-embedded clients send cookies. We don't want them.
+$_COOKIE = array();
+
 # fix for mozBlog and other cases where '<?xml' isn't on the very first line
-$HTTP_RAW_POST_DATA = trim($HTTP_RAW_POST_DATA);
+if ( isset($HTTP_RAW_POST_DATA) )
+	$HTTP_RAW_POST_DATA = trim($HTTP_RAW_POST_DATA);
 
 include('./wp-config.php');
 
@@ -179,8 +185,8 @@ class wp_xmlrpc_server extends IXR_Server {
 	    return $this->error;
 	  }
 
-	  $user = new WP_User(0, $user_login);
-	  $is_admin = $user->has_cap('level_8');
+	  set_current_user(0, $user_login);
+	  $is_admin = current_user_can('level_8');
 
 	  $struct = array(
 	    'isAdmin'  => $is_admin,
@@ -317,8 +323,8 @@ class wp_xmlrpc_server extends IXR_Server {
 	    return $this->error;
 	  }
 
-	  $user = new WP_User(0, $user_login);
-	  if ( !$user->has_cap('edit_themes') ) {
+	  set_current_user(0, $user_login);
+	  if ( !current_user_can('edit_themes') ) {
 	    return new IXR_Error(401, 'Sorry, this user can not edit the template.');
 	  }
 
@@ -352,8 +358,8 @@ class wp_xmlrpc_server extends IXR_Server {
 	    return $this->error;
 	  }
 
-	  $user = new WP_User(0, $user_login);
-	  if ( !$user->has_cap('edit_themes') ) {
+	  set_current_user(0, $user_login);
+	  if ( !current_user_can('edit_themes') ) {
 	    return new IXR_Error(401, 'Sorry, this user can not edit the template.');
 	  }
 
@@ -390,9 +396,8 @@ class wp_xmlrpc_server extends IXR_Server {
 	  }
 	  
 	  $cap = ($publish) ? 'publish_posts' : 'edit_posts';
-
-	  $user = new WP_User(0, $user_login);
-	  if ( !$user->has_cap($cap) )
+	  $user = set_current_user(0, $user_login);
+	  if ( !current_user_can($cap) )
 	    return new IXR_Error(401, 'Sorry, you can not post on this weblog or category.');
 
 	  $post_status = ($publish) ? 'publish' : 'draft';
@@ -445,8 +450,8 @@ class wp_xmlrpc_server extends IXR_Server {
 
 		$this->escape($actual_post);
 
-	  $user = new WP_User(0, $user_login);
-	  if ( !$user->has_cap('edit_post', $post_ID) )
+	  set_current_user(0, $user_login);
+	  if ( !current_user_can('edit_post', $post_ID) )
 	    return new IXR_Error(401, 'Sorry, you do not have the right to edit this post.');
 
 	  extract($actual_post);
@@ -489,8 +494,8 @@ class wp_xmlrpc_server extends IXR_Server {
 	  	return new IXR_Error(404, 'Sorry, no such post.');
 	  }
 
-	  $user = new WP_User(0, $user_login);
-	  if ( !$user->has_cap('edit_post', $post_ID) )
+	  set_current_user(0, $user_login);
+	  if ( !current_user_can('edit_post', $post_ID) )
 	    return new IXR_Error(401, 'Sorry, you do not have the right to delete this post.');
 
 	  $result = wp_delete_post($post_ID);
@@ -525,8 +530,8 @@ class wp_xmlrpc_server extends IXR_Server {
 	    return $this->error;
 	  }
 
-	  $user = new WP_User(0, $user_login);
-	  if ( !$user->has_cap('publish_posts') )
+	  $user = set_current_user(0, $user_login);
+	  if ( !current_user_can('publish_posts') )
 	    return new IXR_Error(401, 'Sorry, you can not post on this weblog or category.');
 
 	  $post_author = $user->ID;
@@ -605,8 +610,8 @@ class wp_xmlrpc_server extends IXR_Server {
 	    return $this->error;
 	  }
 
-	  $user = new WP_User(0, $user_login);
-	  if ( !$user->has_cap('edit_post', $post_ID) )
+	  set_current_user(0, $user_login);
+	  if ( !current_user_can('edit_post', $post_ID) )
 	    return new IXR_Error(401, 'Sorry, you can not edit this post.');
 
 	  $postdata = wp_get_single_post($post_ID, ARRAY_A);
@@ -844,16 +849,15 @@ class wp_xmlrpc_server extends IXR_Server {
 		if ( !$this->login_pass_ok($user_login, $user_pass) )
 			return $this->error;
 
-		$user = new WP_User(0, $user_login);
-
-		if ( !$user->has_cap('upload_files') ) {
+		set_current_user(0, $user_login);
+		if ( !current_user_can('upload_files') ) {
 			logIO('O', '(MW) User does not have upload_files capability');
 			$this->error = new IXR_Error(401, 'You are not allowed to upload files to this site.');
 			return $this->error;
 		}
 
 		$upload = wp_upload_bits($name, $type, $bits);
-		if ( $upload['error'] !== false ) {
+		if ( ! empty($upload['error']) ) {
 			logIO('O', '(MW) Could not write file '.$name);
 			return new IXR_Error(500, 'Could not write file '.$name);
 		}
@@ -984,8 +988,8 @@ class wp_xmlrpc_server extends IXR_Server {
 	    return $this->error;
 	  }
 
-	  $user = new WP_User(0, $user_login);
-	  if ( !$user->has_cap('edit_post', $post_ID) )
+	  set_current_user(0, $user_login);
+	  if ( !current_user_can('edit_post', $post_ID) )
 	    return new IXR_Error(401, 'Sorry, you can not edit this post.');
 
 	  foreach($categories as $cat) {
@@ -1066,8 +1070,8 @@ class wp_xmlrpc_server extends IXR_Server {
 	    return $this->error;
 	  }
 
-	  $user = new WP_User(0, $user_login);
-	  if ( !$user->has_cap('edit_post', $post_ID) )
+	  set_current_user(0, $user_login);
+	  if ( !current_user_can('edit_post', $post_ID) )
 	    return new IXR_Error(401, 'Sorry, you can not edit this post.');
 
 	  $postdata = wp_get_single_post($post_ID,ARRAY_A);
