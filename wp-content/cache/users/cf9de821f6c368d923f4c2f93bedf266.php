@@ -1,0 +1,3 @@
+<?php
+//O:8:"stdClass":14:{s:2:"ID";s:1:"1";s:10:"user_login";s:5:"admin";s:9:"user_pass";s:32:"d6baaf9db9496423c337909ab7d7ce97";s:13:"user_nicename";s:13:"administrator";s:10:"user_email";s:22:"andi@madebyfactory.com";s:8:"user_url";s:0:"";s:15:"user_registered";s:19:"2017-06-24 17:30:24";s:19:"user_activation_key";s:0:"";s:11:"user_status";s:1:"0";s:12:"display_name";s:13:"Administrator";s:8:"nickname";s:13:"Administrator";s:13:"wp_user_level";s:2:"10";s:10:"user_level";s:2:"10";s:15:"wp_capabilities";a:1:{s:13:"administrator";b:1;}}
+?>
